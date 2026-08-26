@@ -24,6 +24,13 @@ function hasValidSignature(request: Request, paymentId: string) {
     return false;
   }
 
+  if (
+    !/^\d+$/.test(timestamp) ||
+    Math.abs(Date.now() - Number(timestamp) * 1000) > 5 * 60 * 1000
+  ) {
+    return false;
+  }
+
   const manifest = `id:${paymentId};request-id:${requestId};ts:${timestamp};`;
   const expectedHash = createHmac("sha256", secret)
     .update(manifest)
@@ -49,7 +56,15 @@ export async function POST(request: Request) {
         ""
     ).trim();
 
+    const eventType = String(
+      url.searchParams.get("type") ?? body?.type ?? body?.topic ?? ""
+    );
+
     if (!paymentId) {
+      return NextResponse.json({ received: true });
+    }
+
+    if (eventType && eventType !== "payment") {
       return NextResponse.json({ received: true });
     }
 

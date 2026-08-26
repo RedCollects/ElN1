@@ -25,12 +25,12 @@ La aplicación estará en `http://localhost:3000`.
 
 El checkout crea una oferta pendiente, calcula el importe en el servidor y crea una preferencia de Mercado Pago con `external_reference`. Mercado Pago notifica en `/api/webhooks/mercadopago`.
 
-El webhook consulta el pago directamente con Mercado Pago y solo un pago aprobado, con importe y moneda correctos, puede ejecutar la función transaccional `settle_bid`.
+El webhook consulta el pago directamente con Mercado Pago y solo un pago aprobado, con importe y moneda correctos, puede ejecutar la función transaccional `settle_bid`. Las notificaciones fuera de una ventana de cinco minutos se rechazan.
 
 ## Antes de producción
 
 - Aplicar la migración en Supabase.
-- Configurar las variables privadas en el proveedor de hosting.
+- Configurar las variables privadas en el proveedor de hosting, incluido `MERCADOPAGO_WEBHOOK_SECRET`.
 - Configurar el webhook con la URL HTTPS de producción.
 - Proteger `/admin` y `/api/admin` con autenticación y autorización.
 - Configurar `ADMIN_PASSWORD` antes de abrir el panel.
