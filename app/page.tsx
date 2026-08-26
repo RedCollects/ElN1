@@ -1,69 +1,85 @@
-import Image from "next/image";
+import { createClient } from "@supabase/supabase-js";
+import Ranking from "./Ranking";
 
-export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
+);
+
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ position?: string }>;
+}) {
+  const { position } = await searchParams;
+  const { data: businesses, error } = await supabase
+    .from("businesses")
+    .select("*")
+    .eq("active", true)
+    .order("position", { ascending: true, nullsFirst: false });
+
+  if (error) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-white px-6">
+        <div className="max-w-md text-center">
+          <h1 className="text-2xl font-black text-red-500">
+            Error al cargar EL N1
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+
+          <p className="mt-3 text-sm text-neutral-500">
+            {error.message}
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
       </main>
-    </div>
+    );
+  }
+
+  const rankedBusinesses = (businesses ?? []).filter(
+    (business) =>
+      Number.isInteger(business.position) &&
+      business.position >= 1 &&
+      business.position <= 10
+  );
+
+  return (
+    <main className="min-h-screen bg-white text-neutral-900">
+      <header className="border-b border-neutral-200 bg-white">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
+          <div className="text-2xl font-black tracking-tight">
+            EL <span className="text-sky-400">N1</span>
+          </div>
+
+          <button className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100">
+            ¿Cómo funciona?
+          </button>
+        </div>
+      </header>
+
+      <section className="mx-auto max-w-6xl px-6 pb-14 pt-16 text-center">
+        <p className="mb-4 text-sm font-bold uppercase tracking-[0.3em] text-sky-400">
+          El ranking de México
+        </p>
+
+        <h1 className="mx-auto max-w-3xl text-5xl font-black tracking-tight text-neutral-950 sm:text-7xl">
+          ¿Quién merece ser
+          <span className="block text-sky-400">EL N1?</span>
+        </h1>
+
+        <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-neutral-500">
+          Los negocios compiten por estar arriba.
+          <br />
+          ¿Hasta dónde estás dispuesto a llegar?
+        </p>
+      </section>
+
+      <Ranking
+        businesses={rankedBusinesses}
+        initialPosition={Number(position) || null}
+      />
+
+      <footer className="border-t border-neutral-200 py-8 text-center text-sm text-neutral-400">
+        EL N1 — México
+      </footer>
+    </main>
   );
 }
