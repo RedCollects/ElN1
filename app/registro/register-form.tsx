@@ -2,74 +2,61 @@
 
 import { useActionState } from "react";
 import { signUp, type AuthState } from "../auth/actions";
-import {
-  inputClassName,
-  labelClassName,
-  primaryButtonClassName,
-} from "../auth/AuthShell";
+import { Alert, Button, Field, Input } from "@/app/ui";
 
 export function RegisterForm({ next }: { next?: string }) {
-  const [state, action, pending] = useActionState<AuthState, FormData>(
-    signUp,
-    {}
-  );
+  const [state, action, pending] = useActionState<AuthState, FormData>(signUp, {});
 
   return (
     <form action={action} className="mt-6 space-y-4">
       {next && <input type="hidden" name="next" value={next} />}
 
-      <label className={labelClassName}>
-        Nombre de tu negocio
-        <input
+      <Field label="Nombre de tu negocio">
+        <Input
           name="businessName"
           required
           minLength={2}
           maxLength={60}
           placeholder="Ej. Tacos Doña Lupita"
-          className={inputClassName}
         />
-      </label>
+      </Field>
 
-      <label className={labelClassName}>
-        Correo electrónico
-        <input
+      <Field label="Correo electrónico">
+        <Input
           type="email"
           name="email"
           required
           autoComplete="email"
           placeholder="tu@correo.com"
-          className={inputClassName}
         />
-      </label>
+      </Field>
 
-      <label className={labelClassName}>
-        Contraseña
-        <input
+      <Field label="Contraseña">
+        <Input
           type="password"
           name="password"
           required
           minLength={8}
           autoComplete="new-password"
           placeholder="Mínimo 8 caracteres"
-          className={inputClassName}
         />
-      </label>
+      </Field>
 
       {state.error && (
-        <p role="alert" className="text-sm text-red-600">
+        <Alert tone="error" compact>
           {state.error}
-        </p>
+        </Alert>
       )}
 
       {state.notice && (
-        <p role="status" className="rounded-xl bg-sky-50 p-3 text-sm text-sky-900">
+        <Alert tone="info" compact>
           {state.notice}
-        </p>
+        </Alert>
       )}
 
-      <button type="submit" disabled={pending} className={primaryButtonClassName}>
+      <Button type="submit" block disabled={pending}>
         {pending ? "CREANDO CUENTA..." : "CREAR CUENTA"}
-      </button>
+      </Button>
     </form>
   );
 }

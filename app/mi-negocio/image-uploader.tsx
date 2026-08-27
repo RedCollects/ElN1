@@ -8,6 +8,7 @@ import {
   type ImageKind,
 } from "../../lib/image-specs";
 import { SmartImage } from "../components/SmartImage";
+import { Alert, Button, cn } from "@/app/ui";
 
 type Props = {
   kind: ImageKind;
@@ -72,7 +73,10 @@ export function ImageUploader({ kind, currentUrl, onPreview }: Props) {
       <p className="mt-1 text-xs text-neutral-400">{spec.hint}</p>
 
       <div
-        className={`relative mt-3 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-100 ${aspectClassName}`}
+        className={cn(
+          "relative mt-3 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-100",
+          aspectClassName
+        )}
       >
         {shown ? (
           <SmartImage
@@ -90,7 +94,7 @@ export function ImageUploader({ kind, currentUrl, onPreview }: Props) {
       </div>
 
       {localPreview && (
-        <p className="mt-2 text-xs text-sky-600">
+        <p className="mt-2 text-xs text-brand-600">
           Así se recortará. Pulsa «Subir» para guardarla.
         </p>
       )}
@@ -105,31 +109,23 @@ export function ImageUploader({ kind, currentUrl, onPreview }: Props) {
           className="block text-sm text-neutral-500 file:mr-3 file:rounded-full file:border-0 file:bg-neutral-900 file:px-4 file:py-2 file:text-xs file:font-bold file:text-white"
         />
 
-        <button
-          type="submit"
-          disabled={uploading || !localPreview}
-          className="rounded-full bg-sky-400 px-4 py-2 text-xs font-bold text-white disabled:opacity-40"
-        >
+        <Button type="submit" variant="accent" size="sm" disabled={uploading || !localPreview}>
           {uploading ? "SUBIENDO..." : "SUBIR"}
-        </button>
+        </Button>
       </form>
 
       {currentUrl && !localPreview && (
         <form action={removeAction} className="mt-2">
-          <button
-            type="submit"
-            disabled={removing}
-            className="text-xs font-bold text-neutral-400 underline disabled:opacity-40"
-          >
+          <Button type="submit" variant="ghost" size="sm" disabled={removing} className="underline">
             {removing ? "Quitando..." : "Quitar imagen"}
-          </button>
+          </Button>
         </form>
       )}
 
       {error && (
-        <p role="alert" className="mt-2 text-sm text-red-600">
+        <Alert tone="error" compact className="mt-2">
           {error}
-        </p>
+        </Alert>
       )}
     </div>
   );

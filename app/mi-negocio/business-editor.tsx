@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { EDITABLE_FIELDS, type Business, type EditableField } from "../../lib/business";
 import { RankingCard } from "../components/RankingCard";
+import { CardSection, Eyebrow, Muted } from "@/app/ui";
 import { ImageUploader } from "./image-uploader";
 import { ProfileForm } from "./profile-form";
 
@@ -47,42 +48,27 @@ export function BusinessEditor({ business }: Props) {
       <div className="space-y-6">
         <ProfileForm business={business} onChange={handleFormChange} />
 
-        <section className="rounded-2xl border border-neutral-200 bg-white p-6">
-          <h2 className="text-xl font-black">Imágenes</h2>
-          <p className="mt-1 text-sm text-neutral-500">
-            Recortamos automáticamente al tamaño ideal. El logo es necesario
-            para publicar.
-          </p>
-
-          <div className="mt-5 grid gap-8 sm:grid-cols-[auto_1fr]">
-            <ImageUploader
-              kind="logo"
-              currentUrl={business.logo_url}
-              onPreview={setLogoPreview}
-            />
+        <CardSection
+          title="Imágenes"
+          description="Recortamos automáticamente al tamaño ideal. El logo es necesario para publicar."
+        >
+          <div className="grid gap-8 sm:grid-cols-[auto_1fr]">
+            <ImageUploader kind="logo" currentUrl={business.logo_url} onPreview={setLogoPreview} />
             <ImageUploader
               kind="cover"
               currentUrl={business.cover_url}
               onPreview={setCoverPreview}
             />
           </div>
-        </section>
+        </CardSection>
       </div>
 
       <aside className="lg:sticky lg:top-6 lg:self-start">
-        <p className="text-sm font-bold uppercase tracking-[0.25em] text-sky-500">
-          Vista previa
-        </p>
-        <p className="mt-1 text-sm text-neutral-500">
-          Así se verá tu tarjeta en el ranking con el anuncio abierto.
-        </p>
+        <Eyebrow>Vista previa</Eyebrow>
+        <Muted className="mt-1">Así se verá tu tarjeta en el ranking con el anuncio abierto.</Muted>
 
         <div className="mt-4">
-          <RankingCard
-            position={business.position ?? 1}
-            business={preview}
-            forceExpanded
-          />
+          <RankingCard position={business.position ?? 1} business={preview} forceExpanded />
         </div>
       </aside>
     </div>

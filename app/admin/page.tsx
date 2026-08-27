@@ -1,6 +1,18 @@
 import { redirect } from "next/navigation";
 import { hasAdminSession } from "../../lib/admin-auth";
 import { createServerSupabaseClient } from "../../lib/supabase-server";
+import {
+  Badge,
+  Button,
+  Card,
+  Container,
+  EmptyState,
+  Heading,
+  Muted,
+  PageShell,
+  Price,
+  SiteHeader,
+} from "@/app/ui";
 
 export default async function AdminPage() {
   if (!(await hasAdminSession())) {
@@ -15,119 +27,73 @@ export default async function AdminPage() {
 
   if (error) {
     return (
-      <main className="min-h-screen bg-neutral-50 p-8">
-        <h1 className="text-3xl font-black text-red-600">
-          Error
-        </h1>
-
-        <p className="mt-3 text-neutral-600">
+      <PageShell tone="muted" centered>
+        <EmptyState tone="error" title="Error">
           {error.message}
-        </p>
-      </main>
+        </EmptyState>
+      </PageShell>
     );
   }
 
   return (
-    <main className="min-h-screen bg-neutral-50 text-neutral-900">
-      <header className="border-b border-neutral-200 bg-white">
-        <div className="mx-auto max-w-6xl px-6 py-5">
-          <h1 className="text-2xl font-black">
-            EL <span className="text-sky-400">N1</span>
-          </h1>
+    <PageShell tone="muted">
+      <SiteHeader subtitle="Panel administrador">
+        <form action="/api/admin/logout" method="post">
+          <Button variant="ghost" className="underline">
+            Cerrar sesión
+          </Button>
+        </form>
+      </SiteHeader>
 
-          <p className="text-sm text-neutral-500">
-            Panel administrador
-          </p>
-
-          <form action="/api/admin/logout" method="post" className="mt-3">
-            <button className="text-sm font-bold text-neutral-500 underline">
-              Cerrar sesión
-            </button>
-          </form>
-        </div>
-      </header>
-
-      <section className="mx-auto max-w-6xl px-6 py-10">
-        <h2 className="text-3xl font-black">
-          Negocios
-        </h2>
+      <Container className="py-10">
+        <Heading as="h2">Negocios</Heading>
 
         <div className="mt-6 space-y-4">
           {(businesses ?? []).map((business) => (
-            <div
-              key={business.id}
-              className="rounded-2xl border border-neutral-200 bg-white p-6"
-            >
-              <div className="flex items-center justify-between">
+            <Card key={business.id}>
+              <div className="flex flex-wrap items-center justify-between gap-4">
                 <div>
-                  <h3 className="text-xl font-bold">
-                    {business.name}
-                  </h3>
+                  <h3 className="text-xl font-bold">{business.name}</h3>
 
-                  <p className="mt-1 text-sm text-neutral-500">
+                  <Muted className="mt-1">
                     {business.category || "Sin categoría"}
                     {business.city ? ` · ${business.city}` : ""}
-                  </p>
+                  </Muted>
 
-                  <p className="mt-2 flex flex-wrap gap-2 text-xs font-bold uppercase tracking-wider">
-                    <span
-                      className={
-                        business.status === "published"
-                          ? "rounded-full bg-emerald-100 px-2 py-1 text-emerald-800"
-                          : "rounded-full bg-amber-100 px-2 py-1 text-amber-800"
-                      }
-                    >
+                  <p className="mt-2 flex flex-wrap gap-2">
+                    <Badge tone={business.status === "published" ? "success" : "warning"}>
                       {business.status === "published" ? "Publicado" : "Borrador"}
-                    </span>
+                    </Badge>
                     {business.position !== null && (
-                      <span className="rounded-full bg-neutral-100 px-2 py-1 text-neutral-600">
-                        Posición #{business.position}
-                      </span>
+                      <Badge>Posición #{business.position}</Badge>
                     )}
-                    {!business.owner_id && (
-                      <span className="rounded-full bg-neutral-100 px-2 py-1 text-neutral-500">
-                        Sin cuenta
-                      </span>
-                    )}
+                    {!business.owner_id && <Badge>Sin cuenta</Badge>}
                   </p>
                 </div>
 
                 <div className="text-right">
-                  <p className="text-sm text-neutral-400">
-                    Oferta actual
-                  </p>
-
-                  <p className="text-2xl font-black text-sky-500">
-                    $
-                    {Number(
-                      business.current_price ?? 0
-                    ).toLocaleString("es-MX")}{" "}
-                    MXN
-                  </p>
+                  <p className="text-sm text-neutral-400">Oferta actual</p>
+                  <Price value={business.current_price} />
                 </div>
 
                 <form action="/api/admin" method="post">
                   <input type="hidden" name="id" value={business.id} />
-                  <input
-                    type="hidden"
-                    name="active"
-                    value={String(!business.active)}
-                  />
-                  <button className="text-sm font-bold text-sky-600 underline">
+                  <input type="hidden" name="active" value={String(!business.active)} />
+                  <Button variant="link" className="underline">
                     {business.active ? "Desactivar" : "Activar"}
-                  </button>
+                  </Button>
                 </form>
               </div>
-            </div>
+            </Card>
           ))}
         </div>
 
         {(!businesses || businesses.length === 0) && (
-          <div className="mt-6 rounded-2xl border border-neutral-200 bg-white p-8 text-center text-neutral-500">
+          <Card padding="lg" className="mt-6 text-center text-neutral-500">
             No hay negocios registrados.
-          </div>
+          </Card>
         )}
-      </section>
-    </main>
+      </Container>
+    </PageShell>
   );
 }

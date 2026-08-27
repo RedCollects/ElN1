@@ -1,6 +1,17 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { INITIAL_PRICES, RANKING_SIZE } from "../../lib/prices";
+import { formatPrice } from "../../lib/format";
+import {
+  Button,
+  Container,
+  Eyebrow,
+  Heading,
+  Lead,
+  Muted,
+  PageShell,
+  SiteFooter,
+  SiteHeader,
+} from "@/app/ui";
 
 export const metadata: Metadata = {
   title: "¿Cómo funciona? | EL N1",
@@ -53,129 +64,107 @@ export default function ComoFuncionaPage() {
   const positions = Array.from({ length: RANKING_SIZE }, (_, i) => i + 1);
 
   return (
-    <main className="min-h-screen bg-white text-neutral-900">
-      <header className="border-b border-neutral-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-          <Link href="/" className="text-2xl font-black tracking-tight">
-            EL <span className="text-sky-400">N1</span>
-          </Link>
+    <PageShell>
+      <SiteHeader>
+        <Button href="/" variant="outline" size="sm">
+          Ver ranking
+        </Button>
+      </SiteHeader>
 
-          <Link
-            href="/"
-            className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100"
-          >
-            Ver ranking
-          </Link>
-        </div>
-      </header>
+      <Container width="narrow" className="py-16">
+        <article>
+          <Eyebrow>¿Cómo funciona?</Eyebrow>
 
-      <article className="mx-auto max-w-3xl px-6 py-16">
-        <p className="text-sm font-bold uppercase tracking-[0.3em] text-sky-400">
-          ¿Cómo funciona?
-        </p>
+          <Heading as="h1" size="xl" className="mt-3">
+            ¿Qué es esto?
+          </Heading>
 
-        <h1 className="mt-3 text-4xl font-black tracking-tight text-neutral-950 sm:text-5xl">
-          ¿Qué es esto?
-        </h1>
+          <Lead className="mt-6 text-neutral-600">
+            EL N1 es un ranking público de negocios de México con solo 10 lugares. No se gana
+            con votos ni con reseñas: se gana pagando más que el que está arriba. El que más
+            ofrece es EL N1, hasta que alguien lo supere.
+          </Lead>
 
-        <p className="mt-6 text-lg leading-8 text-neutral-600">
-          EL N1 es un ranking público de negocios de México con solo 10
-          lugares. No se gana con votos ni con reseñas: se gana pagando más
-          que el que está arriba. El que más ofrece es EL N1, hasta que
-          alguien lo supere.
-        </p>
+          <section className="mt-14">
+            <Heading as="h2" size="md">
+              En tres pasos
+            </Heading>
 
-        <section className="mt-14">
-          <h2 className="text-2xl font-black text-neutral-950">
-            En tres pasos
-          </h2>
+            <ol className="mt-6 space-y-5">
+              {STEPS.map((step, index) => (
+                <li
+                  key={step.title}
+                  className="flex gap-5 rounded-2xl border border-neutral-200 p-5"
+                >
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand font-black text-white">
+                    {index + 1}
+                  </div>
 
-          <ol className="mt-6 space-y-5">
-            {STEPS.map((step, index) => (
-              <li
-                key={step.title}
-                className="flex gap-5 rounded-2xl border border-neutral-200 p-5"
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-400 font-black text-white">
-                  {index + 1}
-                </div>
+                  <div>
+                    <h3 className="font-bold">{step.title}</h3>
+                    <p className="mt-1 text-sm leading-6 text-neutral-500">{step.body}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
 
-                <div>
-                  <h3 className="font-bold">{step.title}</h3>
-                  <p className="mt-1 text-sm leading-6 text-neutral-500">
-                    {step.body}
-                  </p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </section>
+          <section className="mt-14">
+            <Heading as="h2" size="md">
+              Precios de salida
+            </Heading>
 
-        <section className="mt-14">
-          <h2 className="text-2xl font-black text-neutral-950">
-            Precios de salida
-          </h2>
+            <Muted className="mt-2">
+              Lo que cuesta cada posición cuando está libre. Si está ocupada, la oferta mínima
+              es un 10 % más que la oferta actual.
+            </Muted>
 
-          <p className="mt-2 text-sm text-neutral-500">
-            Lo que cuesta cada posición cuando está libre. Si está ocupada,
-            la oferta mínima es un 10 % más que la oferta actual.
-          </p>
-
-          <div className="mt-6 overflow-x-auto rounded-2xl border border-neutral-200">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-neutral-50 text-xs font-bold uppercase tracking-wider text-neutral-400">
-                <tr>
-                  <th className="px-5 py-3">Posición</th>
-                  <th className="px-5 py-3 text-right">Precio de salida</th>
-                </tr>
-              </thead>
-              <tbody>
-                {positions.map((position) => (
-                  <tr
-                    key={position}
-                    className="border-t border-neutral-100"
-                  >
-                    <td className="px-5 py-3 font-bold">#{position}</td>
-                    <td className="px-5 py-3 text-right font-bold text-sky-500">
-                      ${INITIAL_PRICES[position].toLocaleString("es-MX")} MXN
-                    </td>
+            <div className="mt-6 overflow-x-auto rounded-2xl border border-neutral-200">
+              <table className="w-full text-left text-sm">
+                <thead className="bg-neutral-50 text-xs font-bold uppercase tracking-wider text-neutral-400">
+                  <tr>
+                    <th className="px-5 py-3">Posición</th>
+                    <th className="px-5 py-3 text-right">Precio de salida</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {positions.map((position) => (
+                    <tr key={position} className="border-t border-neutral-100">
+                      <td className="px-5 py-3 font-bold">#{position}</td>
+                      <td className="px-5 py-3 text-right font-bold text-brand-500">
+                        {formatPrice(INITIAL_PRICES[position])}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section className="mt-14">
+            <Heading as="h2" size="md">
+              Antes de pagar
+            </Heading>
+
+            <dl className="mt-6 space-y-6">
+              {FAQ.map((item) => (
+                <div key={item.question}>
+                  <dt className="font-bold">{item.question}</dt>
+                  <dd className="mt-1 leading-7 text-neutral-600">{item.answer}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+
+          <div className="mt-14">
+            <Button href="/" variant="accent" size="lg" block>
+              VER EL RANKING
+            </Button>
           </div>
-        </section>
+        </article>
+      </Container>
 
-        <section className="mt-14">
-          <h2 className="text-2xl font-black text-neutral-950">
-            Antes de pagar
-          </h2>
-
-          <dl className="mt-6 space-y-6">
-            {FAQ.map((item) => (
-              <div key={item.question}>
-                <dt className="font-bold">{item.question}</dt>
-                <dd className="mt-1 leading-7 text-neutral-600">
-                  {item.answer}
-                </dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-
-        <div className="mt-14">
-          <Link
-            href="/"
-            className="block w-full rounded-xl bg-sky-400 px-5 py-4 text-center font-bold text-white transition hover:bg-sky-500"
-          >
-            VER EL RANKING
-          </Link>
-        </div>
-      </article>
-
-      <footer className="border-t border-neutral-200 py-8 text-center text-sm text-neutral-400">
-        EL N1 — México
-      </footer>
-    </main>
+      <SiteFooter />
+    </PageShell>
   );
 }

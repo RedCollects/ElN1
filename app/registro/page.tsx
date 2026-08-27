@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import AuthShell from "../auth/AuthShell";
 import { RegisterForm } from "./register-form";
+import { Button, Muted } from "@/app/ui";
 
 export const metadata: Metadata = {
   title: "Registra tu negocio | EL N1",
@@ -21,12 +21,12 @@ export default async function RegisterPage({
     >
       <RegisterForm next={next} />
 
-      <p className="mt-6 text-center text-sm text-neutral-500">
+      <Muted className="mt-6 text-center">
         ¿Ya tienes cuenta?{" "}
-        <Link href="/ingresar" className="font-bold text-sky-500">
+        <Button href="/ingresar" variant="link">
           Ingresar
-        </Link>
-      </p>
+        </Button>
+      </Muted>
     </AuthShell>
   );
 }

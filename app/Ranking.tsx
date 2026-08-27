@@ -1,11 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useState } from "react";
 import { RANKING_SIZE, isValidPosition, minimumOfferFor } from "../lib/prices";
 import type { Business } from "../lib/business";
 import { RESERVATION_MINUTES, type Reservation } from "../lib/payments";
+import { formatPrice } from "../lib/format";
 import { RankingCard } from "./components/RankingCard";
+import { Alert, Button, Container, Eyebrow, Heading, Modal, Muted, Price } from "@/app/ui";
 
 /** Lo que la portada sabe del visitante para decidir qué mostrar en el modal. */
 export type Viewer = {
@@ -26,10 +27,6 @@ type Props = {
 };
 
 const POLL_INTERVAL_MS = 5000;
-
-function formatPrice(value: number) {
-  return `$${value.toLocaleString("es-MX")} MXN`;
-}
 
 export default function Ranking({
   businesses,
@@ -155,24 +152,22 @@ export default function Ranking({
     }
   }
 
-  const nextParam = selectedPosition ? `?next=${encodeURIComponent(`/?position=${selectedPosition}`)}` : "";
+  const nextParam = selectedPosition
+    ? `?next=${encodeURIComponent(`/?position=${selectedPosition}`)}`
+    : "";
 
   return (
     <>
-      <section className="mx-auto max-w-4xl px-6 pb-20">
+      <Container width="content" className="pb-20">
         <div className="mb-6">
-          <p className="text-sm font-bold uppercase tracking-[0.25em] text-sky-500">
-            Ranking actual
-          </p>
-
-          <h2 className="mt-1 text-3xl font-black text-neutral-950">
+          <Eyebrow>Ranking actual</Eyebrow>
+          <Heading as="h2" className="mt-1">
             Los que están arriba
-          </h2>
-
-          <p className="mt-2 text-sm text-neutral-500">
-            Cada posición es un espacio disponible para competir. Pasa el
-            cursor o toca un negocio para ver su anuncio.
-          </p>
+          </Heading>
+          <Muted className="mt-2">
+            Cada posición es un espacio disponible para competir. Pasa el cursor o toca un
+            negocio para ver su anuncio.
+          </Muted>
         </div>
 
         <div className="space-y-4">
@@ -191,143 +186,122 @@ export default function Ranking({
             );
           })}
         </div>
-      </section>
+      </Container>
 
       {selectedPosition !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/50 px-6">
-          <div className="w-full max-w-md rounded-3xl bg-white p-7 shadow-2xl">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-bold uppercase tracking-widest text-sky-500">
-                  Posición #{selectedPosition}
-                </p>
-
-                <h2 className="mt-2 text-3xl font-black">
-                  {ownsSelected
-                    ? "Blinda tu posición"
-                    : selectedBusiness
-                      ? "Superar posición"
-                      : "Ocupa esta posición"}
-                </h2>
-              </div>
-
-              <button onClick={closeModal} aria-label="Cerrar" className="text-2xl text-neutral-400">
-                ×
-              </button>
+        <Modal
+          onClose={closeModal}
+          eyebrow={`Posición #${selectedPosition}`}
+          title={
+            ownsSelected
+              ? "Blinda tu posición"
+              : selectedBusiness
+                ? "Superar posición"
+                : "Ocupa esta posición"
+          }
+        >
+          {!viewer.loggedIn ? (
+            <div className="mt-6">
+              <p className="text-sm leading-6 text-neutral-600">
+                Para ofertar necesitas una cuenta de negocio. Es gratis: te registras,
+                completas tu perfil y pagas solo cuando quieras publicarte.
+              </p>
+              <Button href={`/registro${nextParam}`} size="lg" block className="mt-5">
+                REGISTRA TU NEGOCIO
+              </Button>
+              <Button href={`/ingresar${nextParam}`} variant="ghost" block className="mt-3 py-3">
+                Ya tengo cuenta
+              </Button>
             </div>
-
-            {!viewer.loggedIn ? (
-              <div className="mt-6">
-                <p className="text-sm leading-6 text-neutral-600">
-                  Para ofertar necesitas una cuenta de negocio. Es gratis: te
-                  registras, completas tu perfil y pagas solo cuando quieras
-                  publicarte.
-                </p>
-                <Link
-                  href={`/registro${nextParam}`}
-                  className="mt-5 block w-full rounded-xl bg-neutral-900 px-5 py-4 text-center font-bold text-white"
-                >
-                  REGISTRA TU NEGOCIO
-                </Link>
-                <Link
-                  href={`/ingresar${nextParam}`}
-                  className="mt-3 block w-full py-3 text-center text-sm font-bold text-neutral-500"
-                >
-                  Ya tengo cuenta
-                </Link>
-              </div>
-            ) : !viewer.business ? (
-              <p className="mt-6 text-sm text-neutral-600">
-                No encontramos un negocio ligado a tu cuenta.
+          ) : !viewer.business ? (
+            <p className="mt-6 text-sm text-neutral-600">
+              No encontramos un negocio ligado a tu cuenta.
+            </p>
+          ) : viewer.business.missing.length > 0 ? (
+            <div className="mt-6">
+              <p className="text-sm leading-6 text-neutral-600">
+                Antes de publicar, completa tu perfil. Falta:
               </p>
-            ) : viewer.business.missing.length > 0 ? (
-              <div className="mt-6">
-                <p className="text-sm leading-6 text-neutral-600">
-                  Antes de publicar, completa tu perfil. Falta:
-                </p>
-                <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-neutral-600">
-                  {viewer.business.missing.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-                <Link
-                  href="/mi-negocio"
-                  className="mt-5 block w-full rounded-xl bg-neutral-900 px-5 py-4 text-center font-bold text-white"
-                >
-                  COMPLETAR MI PERFIL
-                </Link>
-              </div>
-            ) : viewer.business.position !== null &&
-              selectedPosition > viewer.business.position ? (
-              <p className="mt-6 text-sm leading-6 text-neutral-600">
-                Ya ocupas la posición #{viewer.business.position}, que es mejor
-                que la #{selectedPosition}. Elige una posición más alta.
-              </p>
-            ) : (
-              <>
-                <div className="mt-6 rounded-2xl bg-sky-50 p-5">
-                  {selectedBusiness && (
-                    <>
-                      <p className="text-sm text-neutral-500">
-                        {ownsSelected ? "Tu oferta actual" : "Oferta actual"}
-                      </p>
-                      <p className="mt-1 text-2xl font-black text-sky-500">
-                        {formatPrice(Number(selectedBusiness.current_price ?? 0))}
-                      </p>
-                      <div className="my-4 h-px bg-sky-100" />
-                    </>
-                  )}
-
-                  <p className="text-sm text-neutral-500">
-                    {ownsSelected ? "Nueva oferta para blindarte" : "Tu oferta"}
-                  </p>
-                  <p className="mt-1 text-3xl font-black">{formatPrice(amount)}</p>
-
-                  {reservationAt(selectedPosition) && (
-                    <p className="mt-2 text-xs text-amber-700">
-                      🔒 Hay una reserva activa sobre esta posición; tu oferta ya la supera.
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-neutral-600">
+                {viewer.business.missing.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+              <Button href="/mi-negocio" size="lg" block className="mt-5">
+                COMPLETAR MI PERFIL
+              </Button>
+            </div>
+          ) : viewer.business.position !== null && selectedPosition > viewer.business.position ? (
+            <p className="mt-6 text-sm leading-6 text-neutral-600">
+              Ya ocupas la posición #{viewer.business.position}, que es mejor que la #
+              {selectedPosition}. Elige una posición más alta.
+            </p>
+          ) : (
+            <>
+              <div className="mt-6 rounded-2xl bg-brand-50 p-5">
+                {selectedBusiness && (
+                  <>
+                    <Muted>{ownsSelected ? "Tu oferta actual" : "Oferta actual"}</Muted>
+                    <p className="mt-1">
+                      <Price value={selectedBusiness.current_price} />
                     </p>
-                  )}
-                </div>
-
-                <div className="mt-5 space-y-2 text-sm text-neutral-500">
-                  <p>
-                    Negocio: <span className="font-bold text-neutral-800">{viewer.business.name}</span>
-                  </p>
-                  <p>
-                    Al continuar reservamos la posición a este precio durante{" "}
-                    {RESERVATION_MINUTES} minutos y te enviamos a Mercado Pago. La
-                    posición se asigna al confirmarse el pago.
-                  </p>
-                </div>
-
-                {notice && (
-                  <p role="status" className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900">
-                    {notice}
-                  </p>
+                    <div className="my-4 h-px bg-brand-100" />
+                  </>
                 )}
 
-                {error && (
-                  <p role="alert" className="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">
-                    {error}
+                <Muted>{ownsSelected ? "Nueva oferta para blindarte" : "Tu oferta"}</Muted>
+                <p className="mt-1">
+                  <Price value={amount} size="lg" tone="ink" />
+                </p>
+
+                {reservationAt(selectedPosition) && (
+                  <p className="mt-2 text-xs text-amber-700">
+                    🔒 Hay una reserva activa sobre esta posición; tu oferta ya la supera.
                   </p>
                 )}
+              </div>
 
-                <button
-                  onClick={reserveAndPay}
-                  disabled={loading}
-                  className="mt-5 w-full rounded-xl bg-sky-400 px-5 py-4 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {loading
-                    ? "RESERVANDO..."
-                    : notice
-                      ? `OFERTAR ${formatPrice(amount)}`
-                      : "RESERVAR Y PAGAR"}
-                </button>
-              </>
-            )}
-          </div>
-        </div>
+              <div className="mt-5 space-y-2 text-sm text-neutral-500">
+                <p>
+                  Negocio:{" "}
+                  <span className="font-bold text-neutral-800">{viewer.business.name}</span>
+                </p>
+                <p>
+                  Al continuar reservamos la posición a este precio durante {RESERVATION_MINUTES}{" "}
+                  minutos y te enviamos a Mercado Pago. La posición se asigna al confirmarse el
+                  pago.
+                </p>
+              </div>
+
+              {notice && (
+                <Alert tone="warning" compact className="mt-4">
+                  {notice}
+                </Alert>
+              )}
+
+              {error && (
+                <Alert tone="error" compact className="mt-4">
+                  {error}
+                </Alert>
+              )}
+
+              <Button
+                variant="accent"
+                size="lg"
+                block
+                onClick={reserveAndPay}
+                disabled={loading}
+                className="mt-5"
+              >
+                {loading
+                  ? "RESERVANDO..."
+                  : notice
+                    ? `OFERTAR ${formatPrice(amount)}`
+                    : "RESERVAR Y PAGAR"}
+              </Button>
+            </>
+          )}
+        </Modal>
       )}
     </>
   );

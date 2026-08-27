@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import AuthShell from "../auth/AuthShell";
 import { LoginForm } from "./login-form";
+import { Alert, Button, Muted } from "@/app/ui";
 
 export const metadata: Metadata = {
   title: "Ingresar | EL N1",
@@ -15,25 +15,22 @@ export default async function LoginPage({
   const { next, error } = await searchParams;
 
   return (
-    <AuthShell
-      title="Ingresar"
-      subtitle="Administra tu negocio y tu posición en el ranking."
-    >
+    <AuthShell title="Ingresar" subtitle="Administra tu negocio y tu posición en el ranking.">
       {error === "confirmacion" && (
-        <p role="alert" className="mt-4 rounded-xl bg-red-50 p-3 text-sm text-red-700">
-          El enlace de confirmación no es válido o ya expiró. Intenta ingresar
-          o regístrate de nuevo.
-        </p>
+        <Alert tone="error" compact className="mt-4">
+          El enlace de confirmación no es válido o ya expiró. Intenta ingresar o regístrate de
+          nuevo.
+        </Alert>
       )}
 
       <LoginForm next={next} />
 
-      <p className="mt-6 text-center text-sm text-neutral-500">
+      <Muted className="mt-6 text-center">
         ¿Aún no tienes cuenta?{" "}
-        <Link href="/registro" className="font-bold text-sky-500">
+        <Button href="/registro" variant="link">
           Registra tu negocio
-        </Link>
-      </p>
+        </Button>
+      </Muted>
     </AuthShell>
   );
 }
