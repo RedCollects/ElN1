@@ -39,6 +39,12 @@ Las sesiones viven en cookies (`@supabase/ssr`); `proxy.ts` las refresca en cada
 
 En producción, Supabase envía un correo de confirmación al registrarse; el enlace apunta a `/auth/confirm`, así que `NEXT_PUBLIC_APP_URL` debe estar en la lista de URLs de redirección del proyecto.
 
+## Imágenes
+
+Logo (1:1, 1024×1024, hasta 2 MB) y portada (16:9, 1600×900, hasta 4 MB) se suben desde `/mi-negocio` mediante Server Actions: el servidor valida tipo y tamaño, recorta con `sharp` (recorte inteligente) y guarda WebP en el bucket público `business-media` de Supabase Storage (migración 004). `next.config.ts` permite las URLs del Storage en `next/image` y eleva `serverActions.bodySizeLimit` a 5 MB.
+
+En el ranking, cada tarjeta se expande (hover en escritorio, toque en móvil) para mostrar el anuncio grande; `BIG_AD_MAX_POSITION` en `lib/business.ts` controla hasta qué posición se ofrece.
+
 ## Flujo de pago
 
 El checkout crea una oferta pendiente, calcula el importe en el servidor y crea una preferencia de Mercado Pago con `external_reference`. Mercado Pago notifica en `/api/webhooks/mercadopago`.

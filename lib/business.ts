@@ -38,7 +38,57 @@ export type Business = {
   current_price: number | null;
   active: boolean;
   status: BusinessStatus;
+  updated_at?: string;
 };
+
+/**
+ * Hasta qué posición se muestra el anuncio grande (hover / toque).
+ * Pendiente de decisión de producto: 10 = todos, 3 = solo el podio, 1 = solo EL N1.
+ */
+export const BIG_AD_MAX_POSITION = 10;
+
+export function hasBigAd(position: number | null | undefined): boolean {
+  return typeof position === "number" && position >= 1 && position <= BIG_AD_MAX_POSITION;
+}
+
+export type ContactLink = {
+  label: string;
+  emoji: string;
+  href: string;
+  external: boolean;
+};
+
+/** Botones de contacto en orden de prioridad (WhatsApp primero). */
+export function contactLinks(business: Partial<Business>): ContactLink[] {
+  const links: ContactLink[] = [];
+
+  if (business.whatsapp) {
+    links.push({ label: "WhatsApp", emoji: "💬", href: whatsappUrl(business.whatsapp), external: true });
+  }
+  if (business.phone) {
+    links.push({ label: "Llamar", emoji: "📞", href: `tel:${business.phone}`, external: false });
+  }
+  if (business.email_public) {
+    links.push({ label: "Email", emoji: "✉️", href: `mailto:${business.email_public}`, external: false });
+  }
+  if (business.website) {
+    links.push({ label: "Sitio web", emoji: "🌐", href: business.website, external: true });
+  }
+  if (business.instagram) {
+    links.push({ label: "Instagram", emoji: "📸", href: socialUrl("instagram", business.instagram), external: true });
+  }
+  if (business.facebook) {
+    links.push({ label: "Facebook", emoji: "👍", href: socialUrl("facebook", business.facebook), external: true });
+  }
+  if (business.tiktok) {
+    links.push({ label: "TikTok", emoji: "🎵", href: socialUrl("tiktok", business.tiktok), external: true });
+  }
+  if (business.maps_url) {
+    links.push({ label: "Cómo llegar", emoji: "📍", href: business.maps_url, external: true });
+  }
+
+  return links;
+}
 
 /** Campos del perfil que el dueño puede editar desde /mi-negocio. */
 export const EDITABLE_FIELDS = [

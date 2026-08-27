@@ -5,7 +5,7 @@ import { getCurrentUser } from "../../lib/supabase-auth";
 import { createServerSupabaseClient } from "../../lib/supabase-server";
 import { missingForPublish, type Business } from "../../lib/business";
 import { signOut } from "../auth/actions";
-import { ProfileForm } from "./profile-form";
+import { BusinessEditor } from "./business-editor";
 
 export const metadata: Metadata = {
   title: "Mi negocio | EL N1",
@@ -55,7 +55,7 @@ export default async function MyBusinessPage() {
   return (
     <main className="min-h-screen bg-neutral-50 text-neutral-900">
       <header className="border-b border-neutral-200 bg-white">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-5">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
           <Link href="/" className="text-2xl font-black tracking-tight">
             EL <span className="text-sky-400">N1</span>
           </Link>
@@ -71,7 +71,7 @@ export default async function MyBusinessPage() {
         </div>
       </header>
 
-      <section className="mx-auto max-w-4xl px-6 py-10">
+      <section className="mx-auto max-w-6xl px-6 py-10">
         <p className="text-sm font-bold uppercase tracking-[0.25em] text-sky-500">
           Mi negocio
         </p>
@@ -127,7 +127,7 @@ export default async function MyBusinessPage() {
           </div>
         )}
 
-        <ProfileForm business={business} />
+        <BusinessEditor key={business.updated_at} business={business} />
       </section>
     </main>
   );

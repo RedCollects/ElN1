@@ -29,14 +29,24 @@ function Section({
   );
 }
 
-export function ProfileForm({ business }: { business: Business }) {
+type Props = {
+  business: Business;
+  /** Se llama con el formulario en cada cambio, para la vista previa en vivo. */
+  onChange?: (form: HTMLFormElement) => void;
+};
+
+export function ProfileForm({ business, onChange }: Props) {
   const [state, action, pending] = useActionState<ProfileState, FormData>(
     updateProfile,
     {}
   );
 
   return (
-    <form action={action} className="mt-8 space-y-6">
+    <form
+      action={action}
+      onChange={(event) => onChange?.(event.currentTarget)}
+      className="space-y-6"
+    >
       <Section title="Lo básico" description="Lo que se ve en la tarjeta del ranking.">
         <label className={labelClassName}>
           Nombre del negocio *
@@ -195,13 +205,6 @@ export function ProfileForm({ business }: { business: Business }) {
             className={inputClassName}
           />
         </label>
-      </Section>
-
-      <Section title="Imágenes" description="Logo (cuadrado, 1024×1024) y portada (16:9, 1600×900).">
-        <p className="text-sm text-neutral-500 sm:col-span-2">
-          La subida de imágenes llega en la siguiente entrega. Mientras tanto,
-          el logo es necesario para publicar.
-        </p>
       </Section>
 
       {state.error && (

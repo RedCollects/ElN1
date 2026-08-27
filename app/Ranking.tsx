@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import {
   INITIAL_PRICES,
@@ -8,16 +7,8 @@ import {
   isValidPosition,
   minimumOfferFor,
 } from "../lib/prices";
-
-type Business = {
-  id: string;
-  name: string;
-  category: string | null;
-  description: string | null;
-  position: number | null;
-  current_price: number | null;
-  active: boolean;
-};
+import type { Business } from "../lib/business";
+import { RankingCard } from "./components/RankingCard";
 
 type Props = {
   businesses: Business[];
@@ -140,121 +131,20 @@ export default function Ranking({ businesses, initialPosition = null }: Props) {
           </h2>
 
           <p className="mt-2 text-sm text-neutral-500">
-            Cada posición es un espacio disponible para competir.
+            Cada posición es un espacio disponible para competir. Pasa el
+            cursor o toca un negocio para ver su anuncio.
           </p>
         </div>
 
         <div className="space-y-4">
-          {positions.map((position) => {
-            const business = getBusinessForPosition(position);
-
-            if (business) {
-              return (
-                <div
-                  key={position}
-                  className={`flex w-full items-center gap-4 rounded-2xl border p-4 ${
-                    position === 1
-                      ? "border-yellow-300 bg-yellow-50"
-                      : position === 2
-                        ? "border-neutral-300 bg-neutral-50"
-                        : position === 3
-                          ? "border-orange-200 bg-orange-50"
-                          : "border-neutral-200 bg-white"
-                  }`}
-                >
-                  <Link
-                    href={`/business/${business.id}`}
-                    className="flex min-w-0 flex-1 items-center gap-4"
-                  >
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-neutral-100 text-lg font-black">
-                      {position === 1
-                        ? "🥇"
-                        : position === 2
-                          ? "🥈"
-                          : position === 3
-                            ? "🥉"
-                            : `#${position}`}
-                    </div>
-
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-                        Posición #{position}
-                      </p>
-
-                      <h3 className="truncate text-lg font-bold">
-                        {business.name}
-                      </h3>
-
-                      <p className="text-sm text-neutral-500">
-                        {business.category || "Sin categoría"}
-                      </p>
-                    </div>
-                  </Link>
-
-                  <div className="text-right">
-                    <p className="text-xs text-neutral-400">
-                      Oferta actual
-                    </p>
-
-                    <p className="font-black text-sky-500">
-                      $
-                      {Number(
-                        business.current_price ?? 0
-                      ).toLocaleString("es-MX")}{" "}
-                      MXN
-                    </p>
-
-                    <button
-                      onClick={() => openPosition(position)}
-                      className="mt-2 rounded-full bg-sky-400 px-4 py-2 text-xs font-bold text-white"
-                    >
-                      SUPERAR
-                    </button>
-                  </div>
-                </div>
-              );
-            }
-
-            return (
-              <div
-                key={position}
-                className="flex w-full items-center gap-4 rounded-2xl border-2 border-dashed border-neutral-300 bg-white p-5"
-              >
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-neutral-100 text-lg font-black text-neutral-500">
-                  #{position}
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold uppercase tracking-wider text-sky-500">
-                    Posición #{position}
-                  </p>
-
-                  <h3 className="mt-1 text-lg font-black">
-                    POSICIÓN DISPONIBLE
-                  </h3>
-
-                  <p className="mt-1 text-sm text-neutral-500">
-                    Haz que tu negocio aparezca aquí.
-                  </p>
-
-                  <p className="mt-2 text-sm font-bold">
-                    Desde $
-                    {INITIAL_PRICES[position].toLocaleString(
-                      "es-MX"
-                    )}{" "}
-                    MXN
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => openPosition(position)}
-                  className="shrink-0 rounded-full bg-neutral-900 px-4 py-2 text-xs font-bold text-white"
-                >
-                  OCUPAR
-                </button>
-              </div>
-            );
-          })}
+          {positions.map((position) => (
+            <RankingCard
+              key={position}
+              position={position}
+              business={getBusinessForPosition(position) ?? null}
+              onBid={openPosition}
+            />
+          ))}
         </div>
       </section>
 

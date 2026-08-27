@@ -1,13 +1,7 @@
 import Link from "next/link";
 import { createPublicSupabaseClient } from "../../../lib/supabase-public";
-import {
-  socialUrl,
-  whatsappUrl,
-  type Business,
-} from "../../../lib/business";
-
-const contactClassName =
-  "rounded-xl border border-neutral-200 px-5 py-4 text-center font-bold transition hover:bg-neutral-50";
+import { contactLinks, type Business } from "../../../lib/business";
+import { SmartImage } from "../../components/SmartImage";
 
 export default async function BusinessPage({
   params,
@@ -45,6 +39,7 @@ export default async function BusinessPage({
 
   const item = business as Business;
   const subtitle = [item.category, item.city].filter(Boolean).join(" · ");
+  const links = contactLinks(item);
 
   return (
     <main className="min-h-screen bg-neutral-50 text-neutral-900">
@@ -68,46 +63,57 @@ export default async function BusinessPage({
 
       <section className="mx-auto max-w-4xl px-6 py-12">
         <div className="overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm">
-          <div
-            className="bg-sky-400 bg-cover bg-center px-6 py-10 text-center"
-            style={
-              item.cover_url
-                ? { backgroundImage: `linear-gradient(rgba(0,0,0,.35), rgba(0,0,0,.35)), url(${item.cover_url})` }
-                : undefined
-            }
-          >
-            <div className="mx-auto flex h-28 w-28 items-center justify-center overflow-hidden rounded-3xl border-4 border-white bg-white text-5xl shadow-lg">
-              {item.logo_url ? (
-                // eslint-disable-next-line @next/next/no-img-element -- next/image llega con la subida de imágenes (PR B)
-                <img
-                  src={item.logo_url}
-                  alt={`Logo de ${item.name}`}
-                  className="h-full w-full object-cover"
+          <div className="relative bg-sky-400 px-6 py-10 text-center">
+            {item.cover_url && (
+              <>
+                <SmartImage
+                  src={item.cover_url}
+                  alt=""
+                  fill
+                  priority
+                  sizes="(min-width: 896px) 896px, 100vw"
+                  className="object-cover"
                 />
-              ) : (
-                "🏪"
+                <div className="absolute inset-0 bg-black/40" />
+              </>
+            )}
+
+            <div className="relative">
+              <div className="mx-auto flex h-28 w-28 items-center justify-center overflow-hidden rounded-3xl border-4 border-white bg-white text-5xl shadow-lg">
+                {item.logo_url ? (
+                  <SmartImage
+                    src={item.logo_url}
+                    alt={`Logo de ${item.name}`}
+                    width={112}
+                    height={112}
+                    priority
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  "🏪"
+                )}
+              </div>
+
+              <p className="mt-5 text-sm font-bold uppercase tracking-[0.25em] text-white/80">
+                {item.position ? `Posición #${item.position}` : "Fuera del ranking"}
+              </p>
+
+              <h1 className="mt-2 text-4xl font-black text-white sm:text-5xl">
+                {item.name}
+              </h1>
+
+              {subtitle && (
+                <p className="mt-2 text-lg font-medium text-white/90">
+                  {subtitle}
+                </p>
+              )}
+
+              {item.tagline && (
+                <p className="mx-auto mt-4 max-w-xl text-base text-white/90">
+                  {item.tagline}
+                </p>
               )}
             </div>
-
-            <p className="mt-5 text-sm font-bold uppercase tracking-[0.25em] text-white/80">
-              {item.position ? `Posición #${item.position}` : "Fuera del ranking"}
-            </p>
-
-            <h1 className="mt-2 text-4xl font-black text-white sm:text-5xl">
-              {item.name}
-            </h1>
-
-            {subtitle && (
-              <p className="mt-2 text-lg font-medium text-white/90">
-                {subtitle}
-              </p>
-            )}
-
-            {item.tagline && (
-              <p className="mx-auto mt-4 max-w-xl text-base text-white/90">
-                {item.tagline}
-              </p>
-            )}
           </div>
 
           <div className="p-6 sm:p-8">
@@ -144,85 +150,21 @@ export default async function BusinessPage({
               </div>
             )}
 
-            <div className="mt-8 grid gap-3 sm:grid-cols-2">
-              {item.whatsapp && (
-                <a
-                  href={whatsappUrl(item.whatsapp)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={contactClassName}
-                >
-                  💬 WhatsApp
-                </a>
-              )}
-
-              {item.phone && (
-                <a href={`tel:${item.phone}`} className={contactClassName}>
-                  📞 Llamar
-                </a>
-              )}
-
-              {item.email_public && (
-                <a href={`mailto:${item.email_public}`} className={contactClassName}>
-                  ✉️ Email
-                </a>
-              )}
-
-              {item.website && (
-                <a
-                  href={item.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={contactClassName}
-                >
-                  🌐 Sitio web
-                </a>
-              )}
-
-              {item.instagram && (
-                <a
-                  href={socialUrl("instagram", item.instagram)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={contactClassName}
-                >
-                  📸 Instagram
-                </a>
-              )}
-
-              {item.facebook && (
-                <a
-                  href={socialUrl("facebook", item.facebook)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={contactClassName}
-                >
-                  👍 Facebook
-                </a>
-              )}
-
-              {item.tiktok && (
-                <a
-                  href={socialUrl("tiktok", item.tiktok)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={contactClassName}
-                >
-                  🎵 TikTok
-                </a>
-              )}
-
-              {item.maps_url && (
-                <a
-                  href={item.maps_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={contactClassName}
-                >
-                  📍 Cómo llegar
-                </a>
-              )}
-            </div>
+            {links.length > 0 && (
+              <div className="mt-8 grid gap-3 sm:grid-cols-2">
+                {links.map((link) => (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    target={link.external ? "_blank" : undefined}
+                    rel={link.external ? "noopener noreferrer" : undefined}
+                    className="rounded-xl border border-neutral-200 px-5 py-4 text-center font-bold transition hover:bg-neutral-50"
+                  >
+                    {link.emoji} {link.label}
+                  </a>
+                ))}
+              </div>
+            )}
 
             {item.hours && (
               <p className="mt-6 text-center text-sm text-neutral-500">
