@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getMinimumOffer } from "../../../lib/prices";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -42,26 +43,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const initialPrices: Record<number, number> = {
-      1: 100,
-      2: 80,
-      3: 60,
-      4: 50,
-      5: 40,
-      6: 30,
-      7: 25,
-      8: 20,
-      9: 15,
-      10: 10,
-    };
-
-    const currentPrice = existingBusiness
-      ? Number(existingBusiness.current_price || 0)
-      : initialPrices[position];
-
-    const minimumOffer = existingBusiness
-      ? Math.ceil(currentPrice * 1.1)
-      : currentPrice;
+    const currentPrice = existingBusiness?.current_price ?? null;
+    const minimumOffer = getMinimumOffer(position, currentPrice);
 
     return NextResponse.json({
       success: true,

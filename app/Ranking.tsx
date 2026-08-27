@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { getInitialPrice, getMinimumOffer } from "../lib/prices";
 
 type Business = {
   id: string;
@@ -16,19 +17,6 @@ type Business = {
 type Props = {
   businesses: Business[];
   initialPosition?: number | null;
-};
-
-const POSITION_PRICES: Record<number, number> = {
-  1: 100,
-  2: 80,
-  3: 60,
-  4: 50,
-  5: 40,
-  6: 30,
-  7: 25,
-  8: 20,
-  9: 15,
-  10: 10,
 };
 
 export default function Ranking({ businesses, initialPosition = null }: Props) {
@@ -52,14 +40,10 @@ export default function Ranking({ businesses, initialPosition = null }: Props) {
     ? getBusinessForPosition(selectedPosition)
     : null;
 
-  const basePrice = selectedPosition
-    ? POSITION_PRICES[selectedPosition] ?? 10
-    : 10;
-
+  const basePrice = selectedPosition ? getInitialPrice(selectedPosition) : 10;
   const currentPrice = selectedBusiness?.current_price ?? basePrice;
-
-  const minimumOffer = selectedBusiness
-    ? Math.ceil(Number(currentPrice) * 1.1)
+  const minimumOffer = selectedPosition
+    ? getMinimumOffer(selectedPosition, selectedBusiness?.current_price)
     : basePrice;
 
   function openPosition(position: number) {
@@ -123,7 +107,7 @@ export default function Ranking({ businesses, initialPosition = null }: Props) {
         return;
       }
 
-      window.location.href = data.init_point;
+      window.location.assign(data.init_point);
     } catch (error) {
       console.error("Error al conectar con Mercado Pago:", error);
       alert("No se pudo conectar con Mercado Pago.");
@@ -243,7 +227,7 @@ export default function Ranking({ businesses, initialPosition = null }: Props) {
 
                   <p className="mt-2 text-sm font-bold">
                     Desde $
-                    {POSITION_PRICES[position].toLocaleString(
+                    {getInitialPrice(position).toLocaleString(
                       "es-MX"
                     )}{" "}
                     MXN

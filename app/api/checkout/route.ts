@@ -1,19 +1,7 @@
 import { NextResponse } from "next/server";
 import { MercadoPagoConfig, Preference } from "mercadopago";
 import { createServerSupabaseClient } from "../../../lib/supabase-server";
-
-const INITIAL_PRICES: Record<number, number> = {
-  1: 100,
-  2: 80,
-  3: 60,
-  4: 50,
-  5: 40,
-  6: 30,
-  7: 25,
-  8: 20,
-  9: 15,
-  10: 10,
-};
+import { getMinimumOffer } from "../../../lib/prices";
 
 export async function POST(request: Request) {
   try {
@@ -60,12 +48,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const currentPrice = currentBusiness
-      ? Number(currentBusiness.current_price)
-      : INITIAL_PRICES[position];
-    const amount = currentBusiness
-      ? Math.ceil(currentPrice * 1.1)
-      : currentPrice;
+    const currentPrice = currentBusiness?.current_price;
+    const amount = getMinimumOffer(position, currentPrice);
 
     const { data: bid, error: bidError } = await supabase
       .from("bids")
