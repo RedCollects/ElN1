@@ -44,7 +44,7 @@ export default async function AdminPage({
           {(businesses ?? []).map((business) => (
             <details key={business.id} className="rounded-2xl border border-neutral-200 bg-white p-6">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-5">
-                <div className="min-w-0"><h3 className="truncate text-xl font-bold">{business.name}</h3><p className="mt-1 text-sm text-neutral-500">#{business.position ?? "Sin posición"} · {business.category || "Sin categoría"} · {business.active ? "Activo" : "Inactivo"}</p></div>
+                <div className="min-w-0"><h3 className="truncate text-xl font-bold">{business.name}</h3><p className="mt-1 text-sm text-neutral-500">#{business.position ?? "Sin posición"} · {business.category || "Sin categoría"} · {business.active ? "Activo" : "Inactivo"} · {business.status === "published" ? "Publicado" : "Borrador"}{business.owner_id ? "" : " · Sin cuenta"}</p></div>
                 <div className="shrink-0 text-right"><p className="text-sm text-neutral-400">Oferta actual</p><p className="text-xl font-black text-sky-500">${Number(business.current_price ?? 0).toLocaleString("es-MX")} MXN</p></div>
               </summary>
 
