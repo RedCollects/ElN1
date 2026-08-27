@@ -395,6 +395,18 @@ export default function Ranking({ businesses, initialPosition = null }: Props) {
                   Tu posición se asignará una vez confirmado el pago.
                 </p>
 
+                <p className="mt-3 text-xs leading-5 text-neutral-400">
+                  Al continuar aceptas los{" "}
+                  <Link href="/terminos" className="underline">
+                    términos y condiciones
+                  </Link>{" "}
+                  y la{" "}
+                  <Link href="/responsiva" className="underline">
+                    carta responsiva
+                  </Link>
+                  .
+                </p>
+
                 <button
                   onClick={continueToPayment}
                   disabled={loading}

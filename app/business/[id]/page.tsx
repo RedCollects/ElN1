@@ -206,7 +206,15 @@ export default async function BusinessPage({
       </section>
 
       <footer className="border-t border-neutral-200 py-8 text-center text-sm text-neutral-400">
-        EL N1 — México
+        <p>EL N1 — México</p>
+        <div className="mt-2 flex justify-center gap-4">
+          <Link href="/terminos" className="underline hover:text-neutral-600">
+            Términos y condiciones
+          </Link>
+          <Link href="/responsiva" className="underline hover:text-neutral-600">
+            Carta responsiva
+          </Link>
+        </div>
       </footer>
     </main>
   );
