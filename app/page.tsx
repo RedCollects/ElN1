@@ -2,6 +2,7 @@ import Link from "next/link";
 import Ranking from "./Ranking";
 import PaymentNotice from "./PaymentNotice";
 import { createPublicSupabaseClient } from "../lib/supabase-public";
+import { getCurrentUser } from "../lib/supabase-auth";
 import { isValidPosition } from "../lib/prices";
 
 export default async function Home({
@@ -10,6 +11,7 @@ export default async function Home({
   searchParams: Promise<{ position?: string; payment?: string }>;
 }) {
   const { position, payment } = await searchParams;
+  const user = await getCurrentUser();
   const supabase = createPublicSupabaseClient();
   const { data: businesses, error } = await supabase
     .from("businesses")
@@ -45,12 +47,38 @@ export default async function Home({
             EL <span className="text-sky-400">N1</span>
           </div>
 
-          <Link
-            href="/como-funciona"
-            className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100"
-          >
-            ¿Cómo funciona?
-          </Link>
+          <nav className="flex items-center gap-2 text-sm font-medium">
+            <Link
+              href="/como-funciona"
+              className="rounded-full border border-neutral-300 px-4 py-2 text-neutral-700 transition hover:bg-neutral-100"
+            >
+              ¿Cómo funciona?
+            </Link>
+
+            {user ? (
+              <Link
+                href="/mi-negocio"
+                className="rounded-full bg-neutral-900 px-4 py-2 text-white transition hover:bg-neutral-700"
+              >
+                Mi negocio
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href="/ingresar"
+                  className="hidden px-3 py-2 text-neutral-700 hover:underline sm:inline"
+                >
+                  Ingresar
+                </Link>
+                <Link
+                  href="/registro"
+                  className="rounded-full bg-neutral-900 px-4 py-2 text-white transition hover:bg-neutral-700"
+                >
+                  Registra tu negocio
+                </Link>
+              </>
+            )}
+          </nav>
         </div>
       </header>
 

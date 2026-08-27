@@ -1,20 +1,13 @@
 import Link from "next/link";
 import { createPublicSupabaseClient } from "../../../lib/supabase-public";
+import {
+  socialUrl,
+  whatsappUrl,
+  type Business,
+} from "../../../lib/business";
 
-type Business = {
-  id: string;
-  name: string;
-  category: string | null;
-  description: string | null;
-  position: number | null;
-  current_price: number | null;
-  phone: string | null;
-  whatsapp: string | null;
-  logo_url: string | null;
-  instagram: string | null;
-  facebook: string | null;
-  tiktok: string | null;
-};
+const contactClassName =
+  "rounded-xl border border-neutral-200 px-5 py-4 text-center font-bold transition hover:bg-neutral-50";
 
 export default async function BusinessPage({
   params,
@@ -51,6 +44,7 @@ export default async function BusinessPage({
   }
 
   const item = business as Business;
+  const subtitle = [item.category, item.city].filter(Boolean).join(" · ");
 
   return (
     <main className="min-h-screen bg-neutral-50 text-neutral-900">
@@ -74,9 +68,17 @@ export default async function BusinessPage({
 
       <section className="mx-auto max-w-4xl px-6 py-12">
         <div className="overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm">
-          <div className="bg-sky-400 px-6 py-10 text-center">
+          <div
+            className="bg-sky-400 bg-cover bg-center px-6 py-10 text-center"
+            style={
+              item.cover_url
+                ? { backgroundImage: `linear-gradient(rgba(0,0,0,.35), rgba(0,0,0,.35)), url(${item.cover_url})` }
+                : undefined
+            }
+          >
             <div className="mx-auto flex h-28 w-28 items-center justify-center overflow-hidden rounded-3xl border-4 border-white bg-white text-5xl shadow-lg">
               {item.logo_url ? (
+                // eslint-disable-next-line @next/next/no-img-element -- next/image llega con la subida de imágenes (PR B)
                 <img
                   src={item.logo_url}
                   alt={`Logo de ${item.name}`}
@@ -88,16 +90,22 @@ export default async function BusinessPage({
             </div>
 
             <p className="mt-5 text-sm font-bold uppercase tracking-[0.25em] text-white/80">
-              Posición #{item.position ?? "-"}
+              {item.position ? `Posición #${item.position}` : "Fuera del ranking"}
             </p>
 
             <h1 className="mt-2 text-4xl font-black text-white sm:text-5xl">
               {item.name}
             </h1>
 
-            {item.category && (
+            {subtitle && (
               <p className="mt-2 text-lg font-medium text-white/90">
-                {item.category}
+                {subtitle}
+              </p>
+            )}
+
+            {item.tagline && (
+              <p className="mx-auto mt-4 max-w-xl text-base text-white/90">
+                {item.tagline}
               </p>
             )}
           </div>
@@ -109,58 +117,74 @@ export default async function BusinessPage({
                   Sobre el negocio
                 </h2>
 
-                <p className="mt-2 leading-7 text-neutral-500">
+                <p className="mt-2 whitespace-pre-line leading-7 text-neutral-500">
                   {item.description}
                 </p>
               </div>
             )}
 
-            <div className="rounded-2xl bg-sky-50 p-6">
-              <p className="text-sm font-medium text-neutral-500">
-                Oferta actual
-              </p>
+            {item.position && (
+              <div className="rounded-2xl bg-sky-50 p-6">
+                <p className="text-sm font-medium text-neutral-500">
+                  Oferta actual
+                </p>
 
-              <p className="mt-1 text-4xl font-black text-sky-500">
-                $
-                {Number(item.current_price ?? 0).toLocaleString(
-                  "es-MX"
-                )}{" "}
-                MXN
-              </p>
+                <p className="mt-1 text-4xl font-black text-sky-500">
+                  $
+                  {Number(item.current_price ?? 0).toLocaleString(
+                    "es-MX"
+                  )}{" "}
+                  MXN
+                </p>
 
-              <p className="mt-2 text-sm text-neutral-500">
-                Esta es la oferta que actualmente mantiene esta
-                posición.
-              </p>
-            </div>
+                <p className="mt-2 text-sm text-neutral-500">
+                  Esta es la oferta que actualmente mantiene esta
+                  posición.
+                </p>
+              </div>
+            )}
 
             <div className="mt-8 grid gap-3 sm:grid-cols-2">
-              {item.phone && (
-                <a
-                  href={`tel:${item.phone}`}
-                  className="rounded-xl border border-neutral-200 px-5 py-4 text-center font-bold transition hover:bg-neutral-50"
-                >
-                  📞 Llamar
-                </a>
-              )}
-
               {item.whatsapp && (
                 <a
-                  href={`https://wa.me/${item.whatsapp.replace(/\D/g, "")}`}
+                  href={whatsappUrl(item.whatsapp)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-xl border border-neutral-200 px-5 py-4 text-center font-bold transition hover:bg-neutral-50"
+                  className={contactClassName}
                 >
                   💬 WhatsApp
                 </a>
               )}
 
-              {item.instagram && (
+              {item.phone && (
+                <a href={`tel:${item.phone}`} className={contactClassName}>
+                  📞 Llamar
+                </a>
+              )}
+
+              {item.email_public && (
+                <a href={`mailto:${item.email_public}`} className={contactClassName}>
+                  ✉️ Email
+                </a>
+              )}
+
+              {item.website && (
                 <a
-                  href={item.instagram}
+                  href={item.website}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-xl border border-neutral-200 px-5 py-4 text-center font-bold transition hover:bg-neutral-50"
+                  className={contactClassName}
+                >
+                  🌐 Sitio web
+                </a>
+              )}
+
+              {item.instagram && (
+                <a
+                  href={socialUrl("instagram", item.instagram)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={contactClassName}
                 >
                   📸 Instagram
                 </a>
@@ -168,10 +192,10 @@ export default async function BusinessPage({
 
               {item.facebook && (
                 <a
-                  href={item.facebook}
+                  href={socialUrl("facebook", item.facebook)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-xl border border-neutral-200 px-5 py-4 text-center font-bold transition hover:bg-neutral-50"
+                  className={contactClassName}
                 >
                   👍 Facebook
                 </a>
@@ -179,15 +203,32 @@ export default async function BusinessPage({
 
               {item.tiktok && (
                 <a
-                  href={item.tiktok}
+                  href={socialUrl("tiktok", item.tiktok)}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-xl border border-neutral-200 px-5 py-4 text-center font-bold transition hover:bg-neutral-50"
+                  className={contactClassName}
                 >
                   🎵 TikTok
                 </a>
               )}
+
+              {item.maps_url && (
+                <a
+                  href={item.maps_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={contactClassName}
+                >
+                  📍 Cómo llegar
+                </a>
+              )}
             </div>
+
+            {item.hours && (
+              <p className="mt-6 text-center text-sm text-neutral-500">
+                🕒 {item.hours}
+              </p>
+            )}
 
             <div className="mt-8">
               <Link

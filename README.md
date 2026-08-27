@@ -31,6 +31,14 @@ npx supabase status # muestra la URL y las claves locales para .env.local
 - `NEXT_PUBLIC_APP_URL`: URL pública de la aplicación; en producción debe ser HTTPS.
 - `ADMIN_PASSWORD`: contraseña de administración de al menos 12 caracteres.
 
+## Cuentas de negocio
+
+Los negocios se registran en `/registro` (email, contraseña y nombre) con Supabase Auth. Al crearse el usuario, un trigger (`handle_new_user`, migración 003) crea su negocio en estado `draft`. En `/mi-negocio` el dueño completa su perfil; el negocio solo es visible públicamente cuando `status = 'published'` y `active = true`.
+
+Las sesiones viven en cookies (`@supabase/ssr`); `proxy.ts` las refresca en cada request y protege `/mi-negocio`. Las escrituras al perfil pasan por Server Actions con la clave de servidor tras verificar que el usuario es el dueño.
+
+En producción, Supabase envía un correo de confirmación al registrarse; el enlace apunta a `/auth/confirm`, así que `NEXT_PUBLIC_APP_URL` debe estar en la lista de URLs de redirección del proyecto.
+
 ## Flujo de pago
 
 El checkout crea una oferta pendiente, calcula el importe en el servidor y crea una preferencia de Mercado Pago con `external_reference`. Mercado Pago notifica en `/api/webhooks/mercadopago`.

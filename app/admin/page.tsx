@@ -66,6 +66,29 @@ export default async function AdminPage() {
 
                   <p className="mt-1 text-sm text-neutral-500">
                     {business.category || "Sin categoría"}
+                    {business.city ? ` · ${business.city}` : ""}
+                  </p>
+
+                  <p className="mt-2 flex flex-wrap gap-2 text-xs font-bold uppercase tracking-wider">
+                    <span
+                      className={
+                        business.status === "published"
+                          ? "rounded-full bg-emerald-100 px-2 py-1 text-emerald-800"
+                          : "rounded-full bg-amber-100 px-2 py-1 text-amber-800"
+                      }
+                    >
+                      {business.status === "published" ? "Publicado" : "Borrador"}
+                    </span>
+                    {business.position !== null && (
+                      <span className="rounded-full bg-neutral-100 px-2 py-1 text-neutral-600">
+                        Posición #{business.position}
+                      </span>
+                    )}
+                    {!business.owner_id && (
+                      <span className="rounded-full bg-neutral-100 px-2 py-1 text-neutral-500">
+                        Sin cuenta
+                      </span>
+                    )}
                   </p>
                 </div>
 
