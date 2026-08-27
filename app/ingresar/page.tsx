@@ -10,12 +10,18 @@ export const metadata: Metadata = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string; error?: string }>;
+  searchParams: Promise<{ next?: string; error?: string; confirmado?: string }>;
 }) {
-  const { next, error } = await searchParams;
+  const { next, error, confirmado } = await searchParams;
 
   return (
     <AuthShell title="Ingresar" subtitle="Administra tu negocio y tu posición en el ranking.">
+      {confirmado && !error && (
+        <Alert tone="success" compact className="mt-4">
+          Tu correo quedó confirmado. Ingresa con tu contraseña para entrar a tu panel.
+        </Alert>
+      )}
+
       {error === "confirmacion" && (
         <Alert tone="error" compact className="mt-4">
           El enlace de confirmación no es válido o ya expiró. Intenta ingresar o regístrate de
