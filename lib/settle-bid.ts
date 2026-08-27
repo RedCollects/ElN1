@@ -1,9 +1,19 @@
-import { MercadoPagoConfig, Payment } from "mercadopago";
+import { MercadoPagoConfig, Payment, PaymentRefund } from "mercadopago";
 import { createServerSupabaseClient } from "./supabase-server";
+import { autoRefundOutbid } from "./payments";
 
 type SettleResult =
   | { settled: true; bidId: string; alreadySettled?: true; result?: unknown }
-  | { settled: false; status?: string; rejected?: string };
+  | { settled: false; status?: string; rejected?: string; refunded?: boolean };
+
+type SettleBidRpc = {
+  success: boolean;
+  already_paid?: boolean;
+  reason?: string;
+  required?: number;
+  paid?: number;
+  bid_id?: string;
+};
 
 /**
  * Verifica un pago contra Mercado Pago y, si es válido, asigna la posición.
@@ -14,6 +24,9 @@ type SettleResult =
  * reintentar. Errores TRANSITORIOS (Mercado Pago o la base de datos no
  * responden) siguen lanzando excepción para que el webhook responda 500 y
  * Mercado Pago reintente más tarde.
+ *
+ * Si al asignar el importe ya no alcanza (alguien pagó más mientras tanto),
+ * `settle_bid` marca la oferta como `outbid` y aquí se reembolsa el pago.
  */
 export async function verifyAndSettlePayment(
   paymentId: string
@@ -40,7 +53,7 @@ export async function verifyAndSettlePayment(
   const supabase = createServerSupabaseClient();
   const { data: bid, error: bidError } = await supabase
     .from("bids")
-    .select("id, amount, status")
+    .select("id, amount, status, refund_id")
     .eq("id", bidId)
     .maybeSingle();
 
@@ -57,6 +70,10 @@ export async function verifyAndSettlePayment(
     return { settled: true, alreadySettled: true, bidId };
   }
 
+  if (bid.status === "refunded" || bid.status === "outbid") {
+    return { settled: false, rejected: bid.status, refunded: Boolean(bid.refund_id) };
+  }
+
   const amountMatches =
     Number(payment.transaction_amount) === Number(bid.amount);
   const currencyMatches = payment.currency_id === "MXN";
@@ -69,9 +86,9 @@ export async function verifyAndSettlePayment(
 
     const { error: rejectError } = await supabase
       .from("bids")
-      .update({ status: "rejected", payment_id: paymentId })
+      .update({ status: "rejected", payment_id: paymentId, failure_reason: reason })
       .eq("id", bidId)
-      .eq("status", "pending");
+      .in("status", ["pending", "expired"]);
 
     if (rejectError) {
       throw new Error(rejectError.message);
@@ -89,5 +106,31 @@ export async function verifyAndSettlePayment(
     throw new Error(error.message);
   }
 
-  return { settled: true, bidId, result: data };
+  const result = data as SettleBidRpc;
+
+  if (result.success) {
+    return { settled: true, bidId, result };
+  }
+
+  // La oferta llegó tarde: alguien pagó más antes de que se confirmara.
+  console.warn(
+    `Pago ${paymentId} no asignado (${result.reason}): pagó ${result.paid}, se requerían ${result.required}.`
+  );
+
+  if (!autoRefundOutbid()) {
+    return { settled: false, rejected: result.reason ?? "outbid", refunded: false };
+  }
+
+  const refund = await new PaymentRefund(client).total({ payment_id: paymentId });
+  const { error: refundError } = await supabase
+    .from("bids")
+    .update({ status: "refunded", refund_id: String(refund.id ?? "") })
+    .eq("id", bidId);
+
+  if (refundError) {
+    // El reembolso ya se emitió; queda en el log aunque falle el registro.
+    console.error(`Reembolso ${refund.id} emitido pero no registrado en la oferta ${bidId}:`, refundError);
+  }
+
+  return { settled: false, rejected: result.reason ?? "outbid", refunded: true };
 }

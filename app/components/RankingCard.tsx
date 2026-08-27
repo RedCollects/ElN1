@@ -4,7 +4,9 @@ import Link from "next/link";
 import { useState } from "react";
 import { hasBigAd, type Business } from "../../lib/business";
 import { INITIAL_PRICES } from "../../lib/prices";
+import type { Reservation } from "../../lib/payments";
 import { BusinessAd } from "./BusinessAd";
+import { Countdown } from "./Countdown";
 import { SmartImage } from "./SmartImage";
 
 type Props = {
@@ -14,6 +16,12 @@ type Props = {
   onBid?: (position: number) => void;
   /** Muestra el anuncio grande siempre (vista previa del panel). */
   forceExpanded?: boolean;
+  /** Reserva vigente sobre esta posición (alguien está pagando ahora). */
+  reservation?: Reservation | null;
+  /** Oferta mínima calculada por el padre (incluye la reserva). */
+  minimumOffer?: number;
+  /** El negocio del visitante ocupa esta posición. */
+  isOwn?: boolean;
 };
 
 const POSITION_STYLES: Record<number, string> = {
@@ -28,35 +36,74 @@ function formatPrice(value: number | null | undefined) {
   return `$${Number(value ?? 0).toLocaleString("es-MX")} MXN`;
 }
 
-export function RankingCard({ position, business, onBid, forceExpanded = false }: Props) {
+function ReservationNotice({
+  reservation,
+  minimumOffer,
+}: {
+  reservation: Reservation;
+  minimumOffer?: number;
+}) {
+  return (
+    <div
+      role="status"
+      className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+    >
+      <span className="font-bold">
+        🔒 Alguien reservó esta posición por {formatPrice(reservation.amount)}
+      </span>
+      <span>
+        ⏱ <Countdown until={reservation.expiresAt} />
+      </span>
+      {minimumOffer !== undefined && (
+        <span>Puedes superarla desde {formatPrice(minimumOffer)}</span>
+      )}
+    </div>
+  );
+}
+
+export function RankingCard({
+  position,
+  business,
+  onBid,
+  forceExpanded = false,
+  reservation = null,
+  minimumOffer,
+  isOwn = false,
+}: Props) {
   const [pinned, setPinned] = useState(false);
   const [hovered, setHovered] = useState(false);
 
   if (!business) {
     return (
-      <div className="flex w-full items-center gap-4 rounded-2xl border-2 border-dashed border-neutral-300 bg-white p-5">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-neutral-100 text-lg font-black text-neutral-500">
-          #{position}
+      <div className="w-full rounded-2xl border-2 border-dashed border-neutral-300 bg-white p-5">
+        <div className="flex items-center gap-4">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-neutral-100 text-lg font-black text-neutral-500">
+            #{position}
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p className="text-xs font-bold uppercase tracking-wider text-sky-500">
+              Posición #{position}
+            </p>
+            <h3 className="mt-1 text-lg font-black">POSICIÓN DISPONIBLE</h3>
+            <p className="mt-1 text-sm text-neutral-500">Haz que tu negocio aparezca aquí.</p>
+            <p className="mt-2 text-sm font-bold">
+              Desde {formatPrice(minimumOffer ?? INITIAL_PRICES[position])}
+            </p>
+          </div>
+
+          {onBid && (
+            <button
+              onClick={() => onBid(position)}
+              className="shrink-0 rounded-full bg-neutral-900 px-4 py-2 text-xs font-bold text-white"
+            >
+              OCUPAR
+            </button>
+          )}
         </div>
 
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-bold uppercase tracking-wider text-sky-500">
-            Posición #{position}
-          </p>
-          <h3 className="mt-1 text-lg font-black">POSICIÓN DISPONIBLE</h3>
-          <p className="mt-1 text-sm text-neutral-500">Haz que tu negocio aparezca aquí.</p>
-          <p className="mt-2 text-sm font-bold">
-            Desde ${INITIAL_PRICES[position].toLocaleString("es-MX")} MXN
-          </p>
-        </div>
-
-        {onBid && (
-          <button
-            onClick={() => onBid(position)}
-            className="shrink-0 rounded-full bg-neutral-900 px-4 py-2 text-xs font-bold text-white"
-          >
-            OCUPAR
-          </button>
+        {reservation && (
+          <ReservationNotice reservation={reservation} minimumOffer={minimumOffer} />
         )}
       </div>
     );
@@ -69,7 +116,9 @@ export function RankingCard({ position, business, onBid, forceExpanded = false }
 
   return (
     <div
-      className={`w-full rounded-2xl border ${POSITION_STYLES[position] ?? "border-neutral-200 bg-white"}`}
+      className={`w-full rounded-2xl border ${POSITION_STYLES[position] ?? "border-neutral-200 bg-white"} ${
+        isOwn ? "ring-2 ring-sky-300" : ""
+      }`}
       onPointerEnter={(event) => {
         if (event.pointerType === "mouse") setHovered(true);
       }}
@@ -77,50 +126,57 @@ export function RankingCard({ position, business, onBid, forceExpanded = false }
         if (event.pointerType === "mouse") setHovered(false);
       }}
     >
-      <div className="flex items-center gap-4 p-4">
-        <button
-          type="button"
-          onClick={() => expandable && setPinned((value) => !value)}
-          aria-expanded={expanded}
-          aria-label={`${expanded ? "Ocultar" : "Ver"} anuncio de ${business.name}`}
-          className="flex min-w-0 flex-1 items-center gap-4 text-left"
-        >
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-neutral-100 text-lg font-black">
-            {business.logo_url ? (
-              <SmartImage
-                src={business.logo_url}
-                alt=""
-                width={56}
-                height={56}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              MEDALS[position] ?? `#${position}`
+      <div className="p-4">
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => expandable && setPinned((value) => !value)}
+            aria-expanded={expanded}
+            aria-label={`${expanded ? "Ocultar" : "Ver"} anuncio de ${business.name}`}
+            className="flex min-w-0 flex-1 items-center gap-4 text-left"
+          >
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-neutral-100 text-lg font-black">
+              {business.logo_url ? (
+                <SmartImage
+                  src={business.logo_url}
+                  alt=""
+                  width={56}
+                  height={56}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                MEDALS[position] ?? `#${position}`
+              )}
+            </div>
+
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-wider text-neutral-400">
+                {MEDALS[position] ? `${MEDALS[position]} ` : ""}Posición #{position}
+                {isOwn ? " · Tu negocio" : ""}
+              </p>
+              <h3 className="truncate text-lg font-bold">{business.name}</h3>
+              <p className="truncate text-sm text-neutral-500">{subtitle}</p>
+            </div>
+          </button>
+
+          <div className="shrink-0 text-right">
+            <p className="text-xs text-neutral-400">Oferta actual</p>
+            <p className="font-black text-sky-500">{formatPrice(business.current_price)}</p>
+
+            {onBid && (
+              <button
+                onClick={() => onBid(position)}
+                className="mt-2 rounded-full bg-sky-400 px-4 py-2 text-xs font-bold text-white"
+              >
+                {isOwn ? "BLINDAR" : "SUPERAR"}
+              </button>
             )}
           </div>
-
-          <div className="min-w-0">
-            <p className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-              {MEDALS[position] ? `${MEDALS[position]} ` : ""}Posición #{position}
-            </p>
-            <h3 className="truncate text-lg font-bold">{business.name}</h3>
-            <p className="truncate text-sm text-neutral-500">{subtitle}</p>
-          </div>
-        </button>
-
-        <div className="shrink-0 text-right">
-          <p className="text-xs text-neutral-400">Oferta actual</p>
-          <p className="font-black text-sky-500">{formatPrice(business.current_price)}</p>
-
-          {onBid && (
-            <button
-              onClick={() => onBid(position)}
-              className="mt-2 rounded-full bg-sky-400 px-4 py-2 text-xs font-bold text-white"
-            >
-              SUPERAR
-            </button>
-          )}
         </div>
+
+        {reservation && (
+          <ReservationNotice reservation={reservation} minimumOffer={minimumOffer} />
+        )}
       </div>
 
       {expandable && (

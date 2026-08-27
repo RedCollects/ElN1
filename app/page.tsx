@@ -1,9 +1,52 @@
 import Link from "next/link";
-import Ranking from "./Ranking";
+import Ranking, { type Viewer } from "./Ranking";
 import PaymentNotice from "./PaymentNotice";
 import { createPublicSupabaseClient } from "../lib/supabase-public";
+import { createServerSupabaseClient } from "../lib/supabase-server";
 import { getCurrentUser } from "../lib/supabase-auth";
 import { isValidPosition } from "../lib/prices";
+import { missingForPublish, type Business } from "../lib/business";
+import type { Reservation } from "../lib/payments";
+
+async function loadViewer(userId: string | undefined): Promise<Viewer> {
+  if (!userId) {
+    return { loggedIn: false, business: null };
+  }
+
+  const { data } = await createServerSupabaseClient()
+    .from("businesses")
+    .select("*")
+    .eq("owner_id", userId)
+    .maybeSingle();
+
+  if (!data) {
+    return { loggedIn: true, business: null };
+  }
+
+  const business = data as Business;
+
+  return {
+    loggedIn: true,
+    business: {
+      id: business.id,
+      name: business.name,
+      position: business.position,
+      missing: missingForPublish(business),
+    },
+  };
+}
+
+async function loadReservations(): Promise<Reservation[]> {
+  const { data } = await createServerSupabaseClient().rpc("active_reservations");
+
+  return (data ?? []).map(
+    (row: { ranking_position: number; amount: number | string; expires_at: string }) => ({
+      position: row.ranking_position,
+      amount: Number(row.amount),
+      expiresAt: row.expires_at,
+    })
+  );
+}
 
 export default async function Home({
   searchParams,
@@ -13,11 +56,15 @@ export default async function Home({
   const { position, payment } = await searchParams;
   const user = await getCurrentUser();
   const supabase = createPublicSupabaseClient();
-  const { data: businesses, error } = await supabase
-    .from("businesses")
-    .select("*")
-    .eq("active", true)
-    .order("position", { ascending: true, nullsFirst: false });
+  const [{ data: businesses, error }, viewer, reservations] = await Promise.all([
+    supabase
+      .from("businesses")
+      .select("*")
+      .eq("active", true)
+      .order("position", { ascending: true, nullsFirst: false }),
+    loadViewer(user?.id),
+    loadReservations(),
+  ]);
 
   if (error) {
     return (
@@ -103,6 +150,8 @@ export default async function Home({
 
       <Ranking
         businesses={rankedBusinesses}
+        reservations={reservations}
+        viewer={viewer}
         initialPosition={Number(position) || null}
       />
 

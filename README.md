@@ -47,7 +47,11 @@ En el ranking, cada tarjeta se expande (hover en escritorio, toque en móvil) pa
 
 ## Flujo de pago
 
-El checkout crea una oferta pendiente, calcula el importe en el servidor y crea una preferencia de Mercado Pago con `external_reference`. Mercado Pago notifica en `/api/webhooks/mercadopago`.
+Solo un negocio con cuenta y perfil completo puede ofertar. El checkout calcula el importe en el servidor contra el estado real de la posición (`position_state`: precio publicado y reserva vigente más alta), registra una **reserva de 5 minutos** (`bids.expires_at`) y crea una preferencia de Mercado Pago con `external_reference` que vence en el mismo instante. Si el cliente manda `expectedAmount` y el precio cambió, responde `409` con el importe nuevo. Las reservas se muestran en el ranking con un contador (`/api/reservations`, sondeo cada 5 s) y no bloquean a nadie: solo suben el piso de la siguiente oferta. Mercado Pago notifica en `/api/webhooks/mercadopago`.
+
+`settle_bid` toma un cerrojo global, **revalida** el importe contra el precio publicado en ese instante y, si ya no alcanza, marca la oferta `outbid`; el servidor emite entonces un reembolso total (`AUTO_REFUND_OUTBID`). Si el negocio ya estaba en el ranking lo mueve (los intermedios bajan uno); comprar la propia posición solo sube el precio. Quien cae fuera del top 10 conserva su perfil con `position = null`.
+
+Efectivo y transferencias lentas se excluyen de la preferencia salvo `ALLOW_CASH_PAYMENTS=true`, porque se confirman fuera de la ventana de reserva.
 
 El webhook consulta el pago directamente con Mercado Pago y solo un pago aprobado, con importe y moneda correctos, puede ejecutar la función transaccional `settle_bid`. Las notificaciones fuera de una ventana de cinco minutos se rechazan.
 
