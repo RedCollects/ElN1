@@ -1,17 +1,16 @@
-import { createClient } from "@supabase/supabase-js";
+import Link from "next/link";
 import Ranking from "./Ranking";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-);
+import PaymentNotice from "./PaymentNotice";
+import { createPublicSupabaseClient } from "../lib/supabase-public";
+import { isValidPosition } from "../lib/prices";
 
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Promise<{ position?: string }>;
+  searchParams: Promise<{ position?: string; payment?: string }>;
 }) {
-  const { position } = await searchParams;
+  const { position, payment } = await searchParams;
+  const supabase = createPublicSupabaseClient();
   const { data: businesses, error } = await supabase
     .from("businesses")
     .select("*")
@@ -34,11 +33,8 @@ export default async function Home({
     );
   }
 
-  const rankedBusinesses = (businesses ?? []).filter(
-    (business) =>
-      Number.isInteger(business.position) &&
-      business.position >= 1 &&
-      business.position <= 10
+  const rankedBusinesses = (businesses ?? []).filter((business) =>
+    isValidPosition(business.position)
   );
 
   return (
@@ -49,11 +45,16 @@ export default async function Home({
             EL <span className="text-sky-400">N1</span>
           </div>
 
-          <button className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100">
+          <Link
+            href="/como-funciona"
+            className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-100"
+          >
             ¿Cómo funciona?
-          </button>
+          </Link>
         </div>
       </header>
+
+      <PaymentNotice status={payment} />
 
       <section className="mx-auto max-w-6xl px-6 pb-14 pt-16 text-center">
         <p className="mb-4 text-sm font-bold uppercase tracking-[0.3em] text-sky-400">

@@ -1,5 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
+import { createPublicSupabaseClient } from "../../../lib/supabase-public";
 
 type Business = {
   id: string;
@@ -16,17 +16,13 @@ type Business = {
   tiktok: string | null;
 };
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-);
-
 export default async function BusinessPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const supabase = createPublicSupabaseClient();
 
   const { data: business, error } = await supabase
     .from("businesses")

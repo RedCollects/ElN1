@@ -6,10 +6,20 @@ Ranking público de negocios donde cada participante puede competir por una posi
 
 1. Instala dependencias con `npm install`.
 2. Copia `.env.example` como `.env.local` y completa las variables.
-3. Ejecuta en Supabase `supabase/migrations/001_ranking_and_payments.sql`.
+3. Ejecuta en Supabase, en orden, los archivos de `supabase/migrations/`.
 4. Inicia la aplicación con `npm run dev`.
 
 La aplicación estará en `http://localhost:3000`.
+
+### Supabase local con Docker (opcional)
+
+Si tienes Docker, puedes levantar una copia local de Supabase en vez de usar un proyecto en la nube:
+
+```bash
+npx supabase init   # solo la primera vez
+npx supabase start  # aplica las migraciones automáticamente
+npx supabase status # muestra la URL y las claves locales para .env.local
+```
 
 ## Variables de entorno
 
@@ -27,6 +37,10 @@ El checkout crea una oferta pendiente, calcula el importe en el servidor y crea 
 
 El webhook consulta el pago directamente con Mercado Pago y solo un pago aprobado, con importe y moneda correctos, puede ejecutar la función transaccional `settle_bid`. Las notificaciones fuera de una ventana de cinco minutos se rechazan.
 
+Un pago con importe o moneda incorrectos marca la oferta como `rejected` y responde 200 para que Mercado Pago no reintente; solo los errores transitorios (Mercado Pago o la base de datos no responden) devuelven 500.
+
+Al volver de Mercado Pago, la portada muestra un aviso según `?payment=success|pending|failure`.
+
 ## Antes de producción
 
 - Aplicar la migración en Supabase.
@@ -40,7 +54,10 @@ El webhook consulta el pago directamente con Mercado Pago y solo un pago aprobad
 ## Comprobaciones
 
 ```bash
+npx next typegen   # genera los tipos globales de Next (LayoutProps, PageProps) que tsc necesita
 npx tsc --noEmit
 npm run lint
 npx next build --webpack
 ```
+
+El build no requiere variables de entorno: los clientes de Supabase se crean por request, no al importar los módulos.
