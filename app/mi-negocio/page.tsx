@@ -21,6 +21,8 @@ export const metadata: Metadata = {
   title: "Mi negocio | EL N1",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function MyBusinessPage() {
   const user = await getCurrentUser();
 
