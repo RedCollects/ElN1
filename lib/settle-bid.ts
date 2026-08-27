@@ -1,6 +1,22 @@
 import { MercadoPagoConfig, Payment } from "mercadopago";
 import { createServerSupabaseClient } from "./supabase-server";
 
+async function markBidInvalid(
+  bidId: string,
+  failureReason: string
+) {
+  const supabase = createServerSupabaseClient();
+  const { error } = await supabase
+    .from("bids")
+    .update({ status: "invalid", failure_reason: failureReason })
+    .eq("id", bidId)
+    .eq("status", "pending");
+
+  if (error) {
+    throw new Error(error.message);
+  }
+}
+
 export async function verifyAndSettlePayment(paymentId: string) {
   const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
 
@@ -13,7 +29,7 @@ export async function verifyAndSettlePayment(paymentId: string) {
   const bidId = String(payment.external_reference ?? "").trim();
 
   if (!bidId) {
-    throw new Error("El pago no tiene una oferta asociada.");
+    return { settled: false, ignored: true };
   }
 
   if (payment.status !== "approved") {
@@ -27,20 +43,30 @@ export async function verifyAndSettlePayment(paymentId: string) {
     .eq("id", bidId)
     .single();
 
+  if (!bid && bidError?.code === "PGRST116") {
+    return { settled: false, ignored: true };
+  }
+
   if (bidError || !bid) {
     throw new Error(bidError?.message || "No encontramos la oferta.");
   }
 
   if (Number(payment.transaction_amount) !== Number(bid.amount)) {
-    throw new Error("El importe pagado no coincide con la oferta.");
+    await markBidInvalid(bidId, "El importe pagado no coincide con la oferta.");
+    return { settled: false, invalid: true, bidId };
   }
 
   if (payment.currency_id !== "MXN") {
-    throw new Error("La moneda del pago no es válida.");
+    await markBidInvalid(bidId, "La moneda del pago no es válida.");
+    return { settled: false, invalid: true, bidId };
   }
 
   if (bid.status === "paid") {
     return { settled: true, alreadySettled: true, bidId };
+  }
+
+  if (bid.status !== "pending") {
+    return { settled: false, invalid: true, bidId };
   }
 
   const { data, error } = await supabase.rpc("settle_bid", {

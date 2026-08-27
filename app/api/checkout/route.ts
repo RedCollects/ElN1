@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { MercadoPagoConfig, Preference } from "mercadopago";
 import { createServerSupabaseClient } from "../../../lib/supabase-server";
-import { getMinimumOffer } from "../../../lib/prices";
+import { getMinimumOffer, MAX_RANKING_POSITION } from "../../../lib/prices";
+import { isValidBusinessCategory } from "../../../lib/categories";
 
 export async function POST(request: Request) {
   try {
@@ -17,14 +18,16 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     const businessName = String(body.businessName || "").trim();
+    const category = String(body.category || "").trim();
     const position = Number(body.position);
 
     if (
       !businessName ||
       businessName.length > 120 ||
+      !isValidBusinessCategory(category) ||
       !Number.isInteger(position) ||
       position < 1 ||
-      position > 10
+      position > MAX_RANKING_POSITION
     ) {
       return NextResponse.json(
         { error: "Faltan datos para crear el pago." },
@@ -55,7 +58,7 @@ export async function POST(request: Request) {
       .from("bids")
       .insert({
         business_name: businessName,
-        category: "General",
+        category,
         position,
         amount,
         status: "pending",

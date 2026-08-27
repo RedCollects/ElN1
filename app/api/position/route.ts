@@ -1,11 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
-import { getMinimumOffer } from "../../../lib/prices";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-);
+import { getMinimumOffer, MAX_RANKING_POSITION } from "../../../lib/prices";
+import { createServerSupabaseClient } from "../../../lib/supabase-server";
 
 export async function POST(request: Request) {
   try {
@@ -21,13 +16,18 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!Number.isInteger(position) || position < 1 || position > 10) {
+    if (
+      !Number.isInteger(position) ||
+      position < 1 ||
+      position > MAX_RANKING_POSITION
+    ) {
       return NextResponse.json(
         { error: "Posición inválida." },
         { status: 400 }
       );
     }
 
+    const supabase = createServerSupabaseClient();
     const { data: existingBusiness, error: existingError } =
       await supabase
         .from("businesses")

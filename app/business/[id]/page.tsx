@@ -1,6 +1,7 @@
-import { createClient } from "@supabase/supabase-js";
 import Link from "next/link";
+import { createServerSupabaseClient } from "../../../lib/supabase-server";
 
+export const dynamic = "force-dynamic";
 type Business = {
   id: string;
   name: string;
@@ -14,12 +15,8 @@ type Business = {
   instagram: string | null;
   facebook: string | null;
   tiktok: string | null;
+  website: string | null;
 };
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-);
 
 export default async function BusinessPage({
   params,
@@ -27,6 +24,7 @@ export default async function BusinessPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const supabase = createServerSupabaseClient();
 
   const { data: business, error } = await supabase
     .from("businesses")
@@ -139,6 +137,16 @@ export default async function BusinessPage({
             </div>
 
             <div className="mt-8 grid gap-3 sm:grid-cols-2">
+              {item.website && (
+                <a
+                  href={item.website}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-xl border border-neutral-200 px-5 py-4 text-center font-bold transition hover:bg-neutral-50"
+                >
+                  🌐 Sitio web
+                </a>
+              )}
               {item.phone && (
                 <a
                   href={`tel:${item.phone}`}

@@ -60,21 +60,28 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="text-xl font-black text-neutral-950">5. Responsabilidad del anunciante</h2>
+            <h2 className="text-xl font-black text-neutral-950">5. Métricas de uso</h2>
+            <p className="mt-2">
+              Para mostrar visitas, actividad y negocios más vistos, EL N1 utiliza un identificador aleatorio almacenado en tu dispositivo. No recopilamos tu nombre, correo ni ubicación para estas métricas, y las cifras se presentan de forma agregada.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-xl font-black text-neutral-950">6. Responsabilidad del anunciante</h2>
             <p className="mt-2">
               Quien publica responde por la veracidad, legalidad y derechos de uso de su nombre, logotipo, descripción, enlaces y demás información. No se permite contenido ilegal, engañoso, ofensivo o que infrinja derechos de terceros.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-black text-neutral-950">6. Pagos y cambios</h2>
+            <h2 className="text-xl font-black text-neutral-950">7. Pagos y cambios</h2>
             <p className="mt-2">
               Los pagos se procesan mediante Mercado Pago. La confirmación de una posición ocurre únicamente después de validar el pago. Cualquier aclaración o reembolso se revisará conforme al estado de la operación y a las políticas aplicables del procesador de pago.
             </p>
           </section>
 
           <section>
-            <h2 className="text-xl font-black text-neutral-950">7. Aceptación</h2>
+            <h2 className="text-xl font-black text-neutral-950">8. Aceptación</h2>
             <p className="mt-2">
               Al continuar con una oferta declaras que leíste estos términos, comprendes que se trata de un experimento y aceptas participar bajo tu propia decisión y responsabilidad.
             </p>

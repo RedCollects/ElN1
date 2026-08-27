@@ -88,6 +88,7 @@ as $$
 declare
   selected_bid public.bids%rowtype;
   inserted_business public.businesses%rowtype;
+  position_is_occupied boolean;
 begin
   select * into selected_bid
   from public.bids
@@ -102,22 +103,41 @@ begin
     return jsonb_build_object('success', true, 'already_paid', true);
   end if;
 
-  update public.businesses
-  set position = position + 1000
-  where active = true
-    and position >= selected_bid.position;
+  if selected_bid.position < 1 or selected_bid.position > 50 then
+    raise exception 'La posición de la oferta no es válida';
+  end if;
 
-  update public.businesses
-  set position = position - 999
-  where active = true
-    and position >= selected_bid.position + 1000;
+  perform pg_advisory_xact_lock(hashtext('public.businesses.ranking'));
+
+  select exists(
+    select 1
+    from public.businesses
+    where active = true and position = selected_bid.position
+  ) into position_is_occupied;
+
+  if position_is_occupied then
+    update public.businesses
+    set position = position + 1000
+    where active = true
+      and position >= selected_bid.position;
+
+    update public.businesses
+    set position = position - 999
+    where active = true
+      and position >= selected_bid.position + 1000;
+
+    update public.businesses
+    set active = false, position = null
+    where active = true
+      and position > 50;
+  end if;
 
   insert into public.businesses (name, category, current_price, position, active)
   values (selected_bid.business_name, coalesce(selected_bid.category, 'General'), selected_bid.amount, selected_bid.position, true)
   returning * into inserted_business;
 
   update public.bids
-  set status = 'paid', payment_id = p_payment_id
+  set status = 'paid', payment_id = p_payment_id, business_id = inserted_business.id
   where id = selected_bid.id;
 
   return jsonb_build_object(

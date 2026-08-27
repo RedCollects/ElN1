@@ -1,7 +1,13 @@
-export const MAX_POSITION = 10;
+export const MAX_RANKING_POSITION = 50;
+const INITIAL_PRICE_POSITION_COUNT = 10;
 
 export function getInitialPrice(position: number) {
-  return (MAX_POSITION - position + 1) * 10;
+  const pricedPosition = Math.min(
+    Math.max(position, 1),
+    INITIAL_PRICE_POSITION_COUNT
+  );
+
+  return (INITIAL_PRICE_POSITION_COUNT - pricedPosition + 1) * 10;
 }
 
 export function getMinimumOffer(

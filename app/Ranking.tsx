@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { getInitialPrice, getMinimumOffer } from "../lib/prices";
+import {
+  getInitialPrice,
+  getMinimumOffer,
+  MAX_RANKING_POSITION,
+} from "../lib/prices";
+import { BUSINESS_CATEGORIES } from "../lib/categories";
+import { trackBusinessClick } from "./SiteExperience";
 
 type Business = {
   id: string;
@@ -21,16 +27,29 @@ type Props = {
 
 export default function Ranking({ businesses, initialPosition = null }: Props) {
   const [selectedPosition, setSelectedPosition] = useState<number | null>(
-    initialPosition && initialPosition >= 1 && initialPosition <= 10
+    initialPosition &&
+    initialPosition >= 1 &&
+    initialPosition <= MAX_RANKING_POSITION
       ? initialPosition
       : null
   );
 
   const [businessName, setBusinessName] = useState("");
+  const [businessCategory, setBusinessCategory] = useState(BUSINESS_CATEGORIES[0]);
+  const [activeCategory, setActiveCategory] = useState<string>("Todas");
   const [confirmed, setConfirmed] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const positions = Array.from({ length: 10 }, (_, index) => index + 1);
+  const positions = Array.from(
+    { length: MAX_RANKING_POSITION },
+    (_, index) => index + 1
+  );
+  const categoryOptions = Array.from(
+    new Set([
+      ...BUSINESS_CATEGORIES,
+      ...businesses.flatMap((business) => business.category ? [business.category] : []),
+    ])
+  );
 
   const getBusinessForPosition = (position: number) => {
     return businesses.find((business) => business.position === position);
@@ -49,6 +68,7 @@ export default function Ranking({ businesses, initialPosition = null }: Props) {
   function openPosition(position: number) {
     setSelectedPosition(position);
     setBusinessName("");
+    setBusinessCategory(BUSINESS_CATEGORIES[0]);
     setConfirmed(false);
     setLoading(false);
   }
@@ -56,6 +76,7 @@ export default function Ranking({ businesses, initialPosition = null }: Props) {
   function closeModal() {
     setSelectedPosition(null);
     setBusinessName("");
+    setBusinessCategory(BUSINESS_CATEGORIES[0]);
     setConfirmed(false);
     setLoading(false);
   }
@@ -81,6 +102,7 @@ export default function Ranking({ businesses, initialPosition = null }: Props) {
         },
         body: JSON.stringify({
           businessName: businessName.trim(),
+          category: businessCategory,
           position: selectedPosition,
           amount: minimumOffer,
         }),
@@ -127,14 +149,37 @@ export default function Ranking({ businesses, initialPosition = null }: Props) {
             Los que están arriba
           </h2>
 
-          <p className="mt-2 text-sm text-neutral-500">
-            Cada posición es un espacio disponible para competir.
+          <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+            Negocios reales compitiendo por atención en México.
           </p>
+        </div>
+
+        <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
+          {["Todas", ...categoryOptions].map((category) => (
+            <button
+              key={category}
+              type="button"
+              onClick={() => setActiveCategory(category)}
+              className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold transition ${
+                activeCategory === category
+                  ? "bg-neutral-950 text-white dark:bg-sky-400 dark:text-neutral-950"
+                  : "border border-neutral-200 bg-white text-neutral-600 hover:border-sky-300 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
+              }`}
+            >
+              {category}
+            </button>
+          ))}
         </div>
 
         <div className="space-y-4">
           {positions.map((position) => {
             const business = getBusinessForPosition(position);
+            if (
+              activeCategory !== "Todas" &&
+              (!business || business.category !== activeCategory)
+            ) {
+              return null;
+            }
 
             if (business) {
               return (
@@ -152,6 +197,7 @@ export default function Ranking({ businesses, initialPosition = null }: Props) {
                 >
                   <Link
                     href={`/business/${business.id}`}
+                    onClick={() => trackBusinessClick(business.id)}
                     className="flex min-w-0 flex-1 items-center gap-4"
                   >
                     <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-neutral-100 text-lg font-black">
@@ -316,6 +362,23 @@ export default function Ranking({ businesses, initialPosition = null }: Props) {
                   className="mt-2 w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none focus:border-sky-400"
                 />
 
+                <label className="mt-5 block text-sm font-bold">
+                  Categoría
+                </label>
+
+                <input
+                  value={businessCategory}
+                  onChange={(event) => setBusinessCategory(event.target.value)}
+                  list="business-categories"
+                  placeholder="Elige o escribe una categoría"
+                  maxLength={60}
+                  required
+                  className="mt-2 w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none focus:border-sky-400 dark:bg-neutral-900"
+                />
+                <datalist id="business-categories">
+                  {BUSINESS_CATEGORIES.map((category) => <option key={category} value={category} />)}
+                </datalist>
+
                 <button
                   onClick={continueToConfirmation}
                   disabled={!businessName.trim()}
@@ -347,6 +410,11 @@ export default function Ranking({ businesses, initialPosition = null }: Props) {
                     <span className="text-right font-bold">
                       {businessName}
                     </span>
+                  </div>
+
+                  <div className="flex justify-between gap-4">
+                    <span className="text-neutral-500">Categoría</span>
+                    <span className="text-right font-bold">{businessCategory}</span>
                   </div>
 
                   <div className="flex justify-between">

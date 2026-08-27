@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "EL N1 | El ranking de México",
-  description: "Compite por estar en la posición número uno.",
+  title: "EL N1 México | El ranking de negocios",
+  description: "El ranking público donde los negocios mexicanos compiten por visibilidad.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
