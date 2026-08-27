@@ -1,22 +1,18 @@
-import Link from "next/link";
-import { createServerSupabaseClient } from "../../../lib/supabase-server";
-
-export const dynamic = "force-dynamic";
-type Business = {
-  id: string;
-  name: string;
-  category: string | null;
-  description: string | null;
-  position: number | null;
-  current_price: number | null;
-  phone: string | null;
-  whatsapp: string | null;
-  logo_url: string | null;
-  instagram: string | null;
-  facebook: string | null;
-  tiktok: string | null;
-  website: string | null;
-};
+import { createPublicSupabaseClient } from "../../../lib/supabase-public";
+import { contactLinks, type Business } from "../../../lib/business";
+import { SmartImage } from "../../components/SmartImage";
+import {
+  Avatar,
+  Button,
+  Container,
+  EmptyState,
+  Eyebrow,
+  Muted,
+  PageShell,
+  Price,
+  SiteFooter,
+  SiteHeader,
+} from "@/app/ui";
 
 export default async function BusinessPage({
   params,
@@ -24,7 +20,7 @@ export default async function BusinessPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = createServerSupabaseClient();
+  const supabase = createPublicSupabaseClient();
 
   const { data: business, error } = await supabase
     .from("businesses")
@@ -35,195 +31,130 @@ export default async function BusinessPage({
 
   if (error || !business) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-white px-6">
-        <div className="text-center">
-          <h1 className="text-3xl font-black text-neutral-950">
-            Negocio no encontrado
-          </h1>
-
-          <Link
-            href="/"
-            className="mt-6 inline-block rounded-xl bg-sky-400 px-6 py-3 font-bold text-white"
-          >
-            Volver al ranking
-          </Link>
-        </div>
-      </main>
+      <PageShell centered>
+        <EmptyState
+          title="Negocio no encontrado"
+          action={
+            <Button href="/" variant="accent">
+              Volver al ranking
+            </Button>
+          }
+        />
+      </PageShell>
     );
   }
 
   const item = business as Business;
+  const subtitle = [item.category, item.city].filter(Boolean).join(" · ");
+  const links = contactLinks(item);
 
   return (
-    <main className="min-h-screen bg-neutral-50 text-neutral-900">
-      <header className="border-b border-neutral-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
-          <Link
-            href="/"
-            className="text-2xl font-black tracking-tight"
-          >
-            EL <span className="text-sky-400">N1</span>
-          </Link>
+    <PageShell tone="muted">
+      <SiteHeader>
+        <Button href="/" variant="outline" size="sm">
+          Ver ranking
+        </Button>
+      </SiteHeader>
 
-          <Link
-            href="/"
-            className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-medium transition hover:bg-neutral-100"
-          >
-            Ver ranking
-          </Link>
-        </div>
-      </header>
-
-      <section className="mx-auto max-w-4xl px-6 py-12">
+      <Container width="content" className="py-12">
         <div className="overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm">
-          <div className="bg-sky-400 px-6 py-10 text-center">
-            <div className="mx-auto flex h-28 w-28 items-center justify-center overflow-hidden rounded-3xl border-4 border-white bg-white text-5xl shadow-lg">
-              {item.logo_url ? (
-                <img
-                  src={item.logo_url}
-                  alt={`Logo de ${item.name}`}
-                  className="h-full w-full object-cover"
+          <div className="relative bg-brand px-6 py-10 text-center">
+            {item.cover_url && (
+              <>
+                <SmartImage
+                  src={item.cover_url}
+                  alt=""
+                  fill
+                  priority
+                  sizes="(min-width: 896px) 896px, 100vw"
+                  className="object-cover"
                 />
-              ) : (
-                "🏪"
+                <div className="absolute inset-0 bg-black/40" />
+              </>
+            )}
+
+            <div className="relative">
+              <Avatar
+                src={item.logo_url}
+                alt={`Logo de ${item.name}`}
+                size="lg"
+                priority
+                className="mx-auto bg-white"
+              />
+
+              <Eyebrow tone="light" className="mt-5">
+                {item.position ? `Posición #${item.position}` : "Fuera del ranking"}
+              </Eyebrow>
+
+              <h1 className="mt-2 text-4xl font-black text-white sm:text-5xl">{item.name}</h1>
+
+              {subtitle && (
+                <p className="mt-2 text-lg font-medium text-white/90">{subtitle}</p>
+              )}
+
+              {item.tagline && (
+                <p className="mx-auto mt-4 max-w-xl text-base text-white/90">{item.tagline}</p>
               )}
             </div>
-
-            <p className="mt-5 text-sm font-bold uppercase tracking-[0.25em] text-white/80">
-              Posición #{item.position ?? "-"}
-            </p>
-
-            <h1 className="mt-2 text-4xl font-black text-white sm:text-5xl">
-              {item.name}
-            </h1>
-
-            {item.category && (
-              <p className="mt-2 text-lg font-medium text-white/90">
-                {item.category}
-              </p>
-            )}
           </div>
 
           <div className="p-6 sm:p-8">
             {item.description && (
               <div className="mb-8">
-                <h2 className="text-lg font-bold text-neutral-950">
-                  Sobre el negocio
-                </h2>
-
-                <p className="mt-2 leading-7 text-neutral-500">
+                <h2 className="text-lg font-bold text-neutral-950">Sobre el negocio</h2>
+                <p className="mt-2 whitespace-pre-line leading-7 text-neutral-500">
                   {item.description}
                 </p>
               </div>
             )}
 
-            <div className="rounded-2xl bg-sky-50 p-6">
-              <p className="text-sm font-medium text-neutral-500">
-                Oferta actual
-              </p>
+            {item.position && (
+              <div className="rounded-2xl bg-brand-50 p-6">
+                <Muted className="font-medium">Oferta actual</Muted>
+                <p className="mt-1">
+                  <Price value={item.current_price} size="xl" />
+                </p>
+                <Muted className="mt-2">
+                  Esta es la oferta que actualmente mantiene esta posición.
+                </Muted>
+              </div>
+            )}
 
-              <p className="mt-1 text-4xl font-black text-sky-500">
-                $
-                {Number(item.current_price ?? 0).toLocaleString(
-                  "es-MX"
-                )}{" "}
-                MXN
-              </p>
+            {links.length > 0 && (
+              <div className="mt-8 grid gap-3 sm:grid-cols-2">
+                {links.map((link) => (
+                  <Button
+                    key={link.label}
+                    href={link.href}
+                    variant="outline"
+                    size="lg"
+                    className="border-neutral-200 text-neutral-900 hover:bg-neutral-50"
+                    target={link.external ? "_blank" : undefined}
+                    rel={link.external ? "noopener noreferrer" : undefined}
+                  >
+                    {link.emoji} {link.label}
+                  </Button>
+                ))}
+              </div>
+            )}
 
-              <p className="mt-2 text-sm text-neutral-500">
-                Esta es la oferta que actualmente mantiene esta
-                posición.
-              </p>
-            </div>
-
-            <div className="mt-8 grid gap-3 sm:grid-cols-2">
-              {item.website && (
-                <a
-                  href={item.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded-xl border border-neutral-200 px-5 py-4 text-center font-bold transition hover:bg-neutral-50"
-                >
-                  🌐 Sitio web
-                </a>
-              )}
-              {item.phone && (
-                <a
-                  href={`tel:${item.phone}`}
-                  className="rounded-xl border border-neutral-200 px-5 py-4 text-center font-bold transition hover:bg-neutral-50"
-                >
-                  📞 Llamar
-                </a>
-              )}
-
-              {item.whatsapp && (
-                <a
-                  href={`https://wa.me/${item.whatsapp.replace(/\D/g, "")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded-xl border border-neutral-200 px-5 py-4 text-center font-bold transition hover:bg-neutral-50"
-                >
-                  💬 WhatsApp
-                </a>
-              )}
-
-              {item.instagram && (
-                <a
-                  href={item.instagram}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded-xl border border-neutral-200 px-5 py-4 text-center font-bold transition hover:bg-neutral-50"
-                >
-                  📸 Instagram
-                </a>
-              )}
-
-              {item.facebook && (
-                <a
-                  href={item.facebook}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded-xl border border-neutral-200 px-5 py-4 text-center font-bold transition hover:bg-neutral-50"
-                >
-                  👍 Facebook
-                </a>
-              )}
-
-              {item.tiktok && (
-                <a
-                  href={item.tiktok}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="rounded-xl border border-neutral-200 px-5 py-4 text-center font-bold transition hover:bg-neutral-50"
-                >
-                  🎵 TikTok
-                </a>
-              )}
-            </div>
+            {item.hours && <Muted className="mt-6 text-center">🕒 {item.hours}</Muted>}
 
             <div className="mt-8">
-              <Link
+              <Button
                 href={`/?position=${item.position ?? ""}`}
-                className="block w-full rounded-xl bg-sky-400 px-5 py-4 text-center font-bold text-white transition hover:bg-sky-500"
+                variant="accent"
+                size="lg"
+                block
               >
                 INTENTAR SUBIR AL RANKING
-              </Link>
+              </Button>
             </div>
           </div>
         </div>
-      </section>
+      </Container>
 
-      <footer className="border-t border-neutral-200 py-8 text-center text-sm text-neutral-400">
-        <p>EL N1 — México</p>
-        <div className="mt-2 flex justify-center gap-4">
-          <Link href="/terminos" className="underline hover:text-neutral-600">
-            Términos y condiciones
-          </Link>
-          <Link href="/responsiva" className="underline hover:text-neutral-600">
-            Carta responsiva
-          </Link>
-        </div>
-      </footer>
-    </main>
+      <SiteFooter />
+    </PageShell>
   );
 }

@@ -1,7 +1,23 @@
-import Ranking from "./Ranking";
-import { createServerSupabaseClient } from "../lib/supabase-server";
-import { MAX_RANKING_POSITION } from "../lib/prices";
+import Ranking, { type Viewer } from "./Ranking";
+import PaymentNotice from "./PaymentNotice";
 import SiteExperience from "./SiteExperience";
+import { createPublicSupabaseClient } from "../lib/supabase-public";
+import { createServerSupabaseClient } from "../lib/supabase-server";
+import { getCurrentUser } from "../lib/supabase-auth";
+import { isValidPosition, MAX_RANKING_POSITION } from "../lib/prices";
+import { missingForPublish, type Business } from "../lib/business";
+import type { Reservation } from "../lib/payments";
+import {
+  Button,
+  Container,
+  EmptyState,
+  Eyebrow,
+  Heading,
+  Lead,
+  PageShell,
+  SiteFooter,
+  SiteHeader,
+} from "@/app/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +27,46 @@ type LeaderboardBusiness = {
   position: number | null;
   visits: number;
 };
+
+async function loadViewer(userId: string | undefined): Promise<Viewer> {
+  if (!userId) {
+    return { loggedIn: false, business: null };
+  }
+
+  const { data } = await createServerSupabaseClient()
+    .from("businesses")
+    .select("*")
+    .eq("owner_id", userId)
+    .maybeSingle();
+
+  if (!data) {
+    return { loggedIn: true, business: null };
+  }
+
+  const business = data as Business;
+
+  return {
+    loggedIn: true,
+    business: {
+      id: business.id,
+      name: business.name,
+      position: business.position,
+      missing: missingForPublish(business),
+    },
+  };
+}
+
+async function loadReservations(): Promise<Reservation[]> {
+  const { data } = await createServerSupabaseClient().rpc("active_reservations");
+
+  return (data ?? []).map(
+    (row: { ranking_position: number; amount: number | string; expires_at: string }) => ({
+      position: row.ranking_position,
+      amount: Number(row.amount),
+      expiresAt: row.expires_at,
+    })
+  );
+}
 
 async function getSiteStats() {
   const supabase = createServerSupabaseClient();
@@ -29,7 +85,7 @@ async function getSiteStats() {
   return { today: todayCount ?? 0, total: totalCount ?? 0, online: onlineCount ?? 0 };
 }
 
-async function getAttentionLeaderboard() {
+async function getAttentionLeaderboard(): Promise<LeaderboardBusiness[]> {
   const supabase = createServerSupabaseClient();
   const { data: totals } = await supabase
     .from("business_click_totals")
@@ -38,19 +94,19 @@ async function getAttentionLeaderboard() {
     .limit(3);
 
   const ids = (totals ?? []).map((total) => total.business_id);
-  if (ids.length === 0) return [] as LeaderboardBusiness[];
+  if (ids.length === 0) return [];
 
   const { data: businesses } = await supabase
     .from("businesses")
     .select("id, name, position")
-    .in("id", ids);
+    .in("id", ids)
+    .eq("active", true)
+    .eq("status", "published");
 
   return (totals ?? []).flatMap((total) => {
     const business = (businesses ?? []).find((item) => item.id === total.business_id);
-    return business
-      ? [{ ...business, visits: Number(total.visits) }]
-      : [];
-  }) as LeaderboardBusiness[];
+    return business ? [{ ...business, visits: Number(total.visits) }] : [];
+  });
 }
 
 export default async function Home({
@@ -59,128 +115,134 @@ export default async function Home({
   searchParams: Promise<{ position?: string; payment?: string }>;
 }) {
   const { position, payment } = await searchParams;
-  const supabase = createServerSupabaseClient();
-  const [{ data: businesses, error }, stats, attentionLeaderboard] = await Promise.all([
-    supabase
-      .from("businesses")
-      .select("*")
-      .eq("active", true)
-      .order("position", { ascending: true, nullsFirst: false }),
-    getSiteStats().catch(() => ({ today: 0, total: 0, online: 0 })),
-    getAttentionLeaderboard().catch(() => [] as LeaderboardBusiness[]),
-  ]);
+  const user = await getCurrentUser();
+  const supabase = createPublicSupabaseClient();
+  const [{ data: businesses, error }, viewer, reservations, stats, attentionLeaderboard] =
+    await Promise.all([
+      supabase
+        .from("businesses")
+        .select("*")
+        .eq("active", true)
+        .eq("status", "published")
+        .order("position", { ascending: true, nullsFirst: false }),
+      loadViewer(user?.id),
+      loadReservations(),
+      getSiteStats().catch(() => ({ today: 0, total: 0, online: 0 })),
+      getAttentionLeaderboard().catch(() => [] as LeaderboardBusiness[]),
+    ]);
 
   if (error) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-white px-6">
-        <div className="max-w-md text-center">
-          <h1 className="text-2xl font-black text-red-500">
-            Error al cargar EL N1
-          </h1>
-
-          <p className="mt-3 text-sm text-neutral-500">
-            {error.message}
-          </p>
-        </div>
-      </main>
+      <PageShell centered>
+        <EmptyState tone="error" title="Error al cargar EL N1">
+          {error.message}
+        </EmptyState>
+      </PageShell>
     );
   }
 
-  const rankedBusinesses = (businesses ?? []).filter(
-    (business) =>
-      Number.isInteger(business.position) &&
-      business.position >= 1 &&
-      business.position <= MAX_RANKING_POSITION
+  const rankedBusinesses = (businesses ?? []).filter((business) =>
+    isValidPosition(business.position)
   );
 
-  const paymentMessage =
-    payment === "success"
-      ? "Recibimos tu pago. Tu posición se actualizará cuando Mercado Pago lo confirme."
-      : payment === "pending"
-        ? "Tu pago está pendiente de confirmación. Actualizaremos la posición cuando se apruebe."
-        : payment === "failure"
-          ? "No se completó el pago. Puedes intentar de nuevo cuando quieras."
-          : null;
-
   return (
-    <main className="min-h-screen bg-white text-neutral-900 transition-colors dark:bg-neutral-950 dark:text-white">
-      <header className="border-b border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-950">
-        <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
-          <div className="text-2xl font-black tracking-tight">
-            EL <span className="text-sky-400">N1</span>
-            <span className="ml-2 text-xs font-bold uppercase tracking-[0.2em] text-neutral-400">México</span>
-          </div>
-          <SiteExperience initialStats={stats} />
-        </div>
-      </header>
+    <PageShell>
+      <SiteHeader>
+        <SiteExperience initialStats={stats} />
 
-      <section className="mx-auto max-w-7xl px-6 pb-12 pt-14 text-center sm:pt-20">
-        <p className="mb-4 text-sm font-bold uppercase tracking-[0.3em] text-sky-400">
-          Atención para negocios mexicanos
-        </p>
+        <Button href="/como-funciona" variant="outline" size="sm">
+          ¿Cómo funciona?
+        </Button>
 
-        <h1 className="mx-auto max-w-4xl text-5xl font-black tracking-tight text-neutral-950 dark:text-white sm:text-7xl">
+        {user ? (
+          <Button href="/mi-negocio" size="sm">
+            Mi negocio
+          </Button>
+        ) : (
+          <>
+            <Button href="/ingresar" variant="ghost" className="hidden sm:inline-flex">
+              Ingresar
+            </Button>
+            <Button href="/registro" size="sm">
+              Registra tu negocio
+            </Button>
+          </>
+        )}
+      </SiteHeader>
+
+      <PaymentNotice status={payment} />
+
+      <Container className="pb-12 pt-14 text-center sm:pt-20">
+        <Eyebrow className="mb-4">Atención para negocios mexicanos</Eyebrow>
+
+        <Heading as="h1" size="display" className="mx-auto max-w-4xl">
           Tu negocio merece
-          <span className="block text-sky-400">estar arriba.</span>
-        </h1>
+          <span className="block text-brand">estar arriba.</span>
+        </Heading>
 
-        <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-neutral-500 dark:text-neutral-400">
+        <Lead className="mx-auto mt-6 max-w-2xl">
           El ranking público donde los negocios compiten por visibilidad.
           Tú decides hasta dónde subir.
-        </p>
+        </Lead>
 
-        <div className="mx-auto mt-8 grid max-w-3xl grid-cols-3 divide-x divide-neutral-200 rounded-2xl border border-neutral-200 bg-neutral-50 py-4 text-left dark:divide-neutral-800 dark:border-neutral-800 dark:bg-neutral-900">
-          <div className="px-5"><p className="text-xs uppercase tracking-wider text-neutral-400">Ranking</p><p className="mt-1 font-black">Top 50</p></div>
-          <div className="px-5"><p className="text-xs uppercase tracking-wider text-neutral-400">Moneda</p><p className="mt-1 font-black">MXN</p></div>
-          <div className="px-5"><p className="text-xs uppercase tracking-wider text-neutral-400">Estado</p><p className="mt-1 font-black text-emerald-500">● En vivo</p></div>
+        <div className="mx-auto mt-8 grid max-w-3xl grid-cols-3 divide-x divide-neutral-200 rounded-2xl border border-neutral-200 bg-neutral-50 py-4 text-left">
+          <div className="px-5">
+            <p className="text-xs uppercase tracking-wider text-neutral-400">Ranking</p>
+            <p className="mt-1 font-black">Top {MAX_RANKING_POSITION}</p>
+          </div>
+          <div className="px-5">
+            <p className="text-xs uppercase tracking-wider text-neutral-400">Moneda</p>
+            <p className="mt-1 font-black">MXN</p>
+          </div>
+          <div className="px-5">
+            <p className="text-xs uppercase tracking-wider text-neutral-400">Estado</p>
+            <p className="mt-1 font-black text-emerald-500">● En vivo</p>
+          </div>
         </div>
-      </section>
+      </Container>
 
-      {paymentMessage && (
-        <div
-          className={`mx-auto mb-8 max-w-4xl rounded-2xl px-6 py-4 text-center text-sm font-medium ${
-            payment === "failure"
-              ? "bg-red-50 text-red-700"
-              : "bg-sky-50 text-sky-800"
-          }`}
-        >
-          {paymentMessage}
-        </div>
-      )}
+      <div className="mx-auto grid w-full max-w-7xl gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <Ranking
+          businesses={rankedBusinesses}
+          reservations={reservations}
+          viewer={viewer}
+          initialPosition={Number(position) || null}
+        />
 
-      <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
-        <Ranking businesses={rankedBusinesses} initialPosition={Number(position) || null} />
-
-        <aside className="mx-6 mb-14 h-fit rounded-3xl border border-neutral-200 bg-neutral-50 p-6 dark:border-neutral-800 dark:bg-neutral-900 lg:sticky lg:top-6">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-sky-500">Leaderboard</p>
+        <aside className="mx-6 mb-14 h-fit rounded-3xl border border-neutral-200 bg-neutral-50 p-6 lg:sticky lg:top-6">
+          <Eyebrow size="xs">Leaderboard</Eyebrow>
           <h2 className="mt-2 text-xl font-black">Más visitados</h2>
-          <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">La atención también cuenta.</p>
+          <p className="mt-1 text-sm text-neutral-500">La atención también cuenta.</p>
           <ol className="mt-5 space-y-4">
-            {attentionLeaderboard.length > 0 ? attentionLeaderboard.map((business, index) => (
-              <li key={business.id} className="flex items-center gap-3">
-                <span className="w-5 text-sm font-black text-sky-500">{index + 1}</span>
-                <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{business.name}</p><p className="text-xs text-neutral-400">#{business.position ?? "–"} · {business.visits.toLocaleString("es-MX")} visitas</p></div>
+            {attentionLeaderboard.length > 0 ? (
+              attentionLeaderboard.map((business, index) => (
+                <li key={business.id} className="flex items-center gap-3">
+                  <span className="w-5 text-sm font-black text-brand-500">{index + 1}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-bold">{business.name}</p>
+                    <p className="text-xs text-neutral-400">
+                      #{business.position ?? "–"} · {business.visits.toLocaleString("es-MX")} visitas
+                    </p>
+                  </div>
+                </li>
+              ))
+            ) : (
+              <li className="text-sm leading-6 text-neutral-500">
+                Aún no hay visitas suficientes. Sé de los primeros en descubrir negocios.
               </li>
-            )) : <li className="text-sm leading-6 text-neutral-500 dark:text-neutral-400">Aún no hay visitas suficientes. Sé de los primeros en descubrir negocios.</li>}
+            )}
           </ol>
-          <div className="mt-6 border-t border-neutral-200 pt-5 text-sm dark:border-neutral-800">
+          <div className="mt-6 border-t border-neutral-200 pt-5 text-sm">
             <p className="font-bold">Transparencia de métricas</p>
-            <p className="mt-1 leading-5 text-neutral-500 dark:text-neutral-400">Contamos una visita anónima por dispositivo al día. No vendemos ni mostramos datos personales.</p>
+            <p className="mt-1 leading-5 text-neutral-500">
+              Contamos una visita anónima por dispositivo al día. No vendemos ni mostramos
+              datos personales.
+            </p>
           </div>
         </aside>
       </div>
 
-      <footer className="border-t border-neutral-200 py-8 text-center text-sm text-neutral-400">
-        <p>EL N1 — México</p>
-        <div className="mt-2 flex justify-center gap-4">
-          <a href="/terminos" className="underline hover:text-neutral-600">
-            Términos y condiciones
-          </a>
-          <a href="/responsiva" className="underline hover:text-neutral-600">
-            Carta responsiva
-          </a>
-        </div>
-      </footer>
-    </main>
+      <SiteFooter />
+    </PageShell>
   );
 }

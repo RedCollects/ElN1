@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Alert, Button, Input } from "@/app/ui";
 
 export function LoginForm() {
   const router = useRouter();
@@ -31,23 +32,26 @@ export function LoginForm() {
 
   return (
     <form onSubmit={submit} className="mt-6 space-y-4">
-      <input
+      <Input
         type="password"
         value={password}
         onChange={(event) => setPassword(event.target.value)}
         placeholder="Contraseña"
+        aria-label="Contraseña"
         autoComplete="current-password"
         required
-        className="w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none focus:border-sky-400"
+        className="mt-0"
       />
-      {error && <p className="text-sm text-red-600">{error}</p>}
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-xl bg-neutral-900 px-5 py-3 font-bold text-white disabled:opacity-50"
-      >
+
+      {error && (
+        <Alert tone="error" compact>
+          {error}
+        </Alert>
+      )}
+
+      <Button type="submit" block disabled={loading}>
         {loading ? "VALIDANDO..." : "ENTRAR"}
-      </button>
+      </Button>
     </form>
   );
 }

@@ -1,157 +1,179 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import {
-  getInitialPrice,
-  getMinimumOffer,
-  MAX_RANKING_POSITION,
-} from "../lib/prices";
-import { BUSINESS_CATEGORIES } from "../lib/categories";
-import { trackBusinessClick } from "./SiteExperience";
+import { useEffect, useState } from "react";
+import { RANKING_SIZE, isValidPosition, minimumOfferFor } from "../lib/prices";
+import type { Business } from "../lib/business";
+import { RESERVATION_MINUTES, type Reservation } from "../lib/payments";
+import { formatPrice } from "../lib/format";
+import { RankingCard } from "./components/RankingCard";
+import { Alert, Button, Container, Eyebrow, Heading, Modal, Muted, Price } from "@/app/ui";
 
-type Business = {
-  id: string;
-  name: string;
-  category: string | null;
-  description: string | null;
-  position: number | null;
-  current_price: number | null;
-  active: boolean;
+/** Lo que la portada sabe del visitante para decidir qué mostrar en el modal. */
+export type Viewer = {
+  loggedIn: boolean;
+  business: {
+    id: string;
+    name: string;
+    position: number | null;
+    missing: string[];
+  } | null;
 };
 
 type Props = {
   businesses: Business[];
+  reservations: Reservation[];
+  viewer: Viewer;
   initialPosition?: number | null;
 };
 
-export default function Ranking({ businesses, initialPosition = null }: Props) {
-  const [selectedPosition, setSelectedPosition] = useState<number | null>(
-    initialPosition &&
-    initialPosition >= 1 &&
-    initialPosition <= MAX_RANKING_POSITION
-      ? initialPosition
-      : null
-  );
+const POLL_INTERVAL_MS = 5000;
 
-  const [businessName, setBusinessName] = useState("");
-  const [businessCategory, setBusinessCategory] = useState(BUSINESS_CATEGORIES[0]);
-  const [activeCategory, setActiveCategory] = useState<string>("Todas");
-  const [confirmed, setConfirmed] = useState(false);
+export default function Ranking({
+  businesses,
+  reservations: initialReservations,
+  viewer,
+  initialPosition = null,
+}: Props) {
+  const [selectedPosition, setSelectedPosition] = useState<number | null>(
+    initialPosition && isValidPosition(initialPosition) ? initialPosition : null
+  );
+  const [reservations, setReservations] = useState(initialReservations);
+  const [quotedAmount, setQuotedAmount] = useState<number | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const positions = Array.from(
-    { length: MAX_RANKING_POSITION },
-    (_, index) => index + 1
-  );
+  useEffect(() => {
+    let cancelled = false;
+
+    const timer = setInterval(async () => {
+      try {
+        const response = await fetch("/api/reservations", { cache: "no-store" });
+        if (!response.ok) return;
+        const data = (await response.json()) as { reservations: Reservation[] };
+        if (!cancelled) setReservations(data.reservations);
+      } catch {
+        // Sin red: se reintenta en el siguiente ciclo.
+      }
+    }, POLL_INTERVAL_MS);
+
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, []);
+
+  const [activeCategory, setActiveCategory] = useState("Todas");
+
+  const positions = Array.from({ length: RANKING_SIZE }, (_, index) => index + 1);
   const categoryOptions = Array.from(
-    new Set([
-      ...BUSINESS_CATEGORIES,
-      ...businesses.flatMap((business) => business.category ? [business.category] : []),
-    ])
+    new Set(businesses.flatMap((business) => (business.category ? [business.category] : [])))
   );
+  const businessAt = (position: number) =>
+    businesses.find((business) => business.position === position) ?? null;
+  const reservationAt = (position: number) =>
+    reservations.find(
+      (reservation) =>
+        reservation.position === position && new Date(reservation.expiresAt).getTime() > Date.now()
+    ) ?? null;
 
-  const getBusinessForPosition = (position: number) => {
-    return businesses.find((business) => business.position === position);
-  };
+  function minimumOfferAt(position: number) {
+    const holderPrice = businessAt(position)?.current_price ?? null;
+    const reserved = reservationAt(position)?.amount ?? null;
+    const floor =
+      holderPrice === null && reserved === null
+        ? null
+        : Math.max(Number(holderPrice ?? 0), reserved ?? 0);
+    return minimumOfferFor(position, floor);
+  }
 
-  const selectedBusiness = selectedPosition
-    ? getBusinessForPosition(selectedPosition)
-    : null;
-
-  const basePrice = selectedPosition ? getInitialPrice(selectedPosition) : 10;
-  const currentPrice = selectedBusiness?.current_price ?? basePrice;
-  const minimumOffer = selectedPosition
-    ? getMinimumOffer(selectedPosition, selectedBusiness?.current_price)
-    : basePrice;
+  const selectedBusiness = selectedPosition ? businessAt(selectedPosition) : null;
+  const ownsSelected = Boolean(
+    selectedBusiness && viewer.business && selectedBusiness.id === viewer.business.id
+  );
+  const liveMinimum = selectedPosition ? minimumOfferAt(selectedPosition) : 0;
+  const amount = quotedAmount ?? liveMinimum;
 
   function openPosition(position: number) {
     setSelectedPosition(position);
-    setBusinessName("");
-    setBusinessCategory(BUSINESS_CATEGORIES[0]);
-    setConfirmed(false);
+    setQuotedAmount(null);
+    setNotice(null);
+    setError(null);
     setLoading(false);
   }
 
   function closeModal() {
     setSelectedPosition(null);
-    setBusinessName("");
-    setBusinessCategory(BUSINESS_CATEGORIES[0]);
-    setConfirmed(false);
+    setQuotedAmount(null);
+    setNotice(null);
+    setError(null);
     setLoading(false);
   }
 
-  function continueToConfirmation() {
-    if (!businessName.trim()) return;
-
-    setConfirmed(true);
-  }
-
-  async function continueToPayment() {
-    if (!selectedPosition || !businessName.trim()) {
-      return;
-    }
+  async function reserveAndPay() {
+    if (!selectedPosition) return;
 
     setLoading(true);
+    setError(null);
+    setNotice(null);
 
     try {
       const response = await fetch("/api/checkout", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          businessName: businessName.trim(),
-          category: businessCategory,
-          position: selectedPosition,
-          amount: minimumOffer,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ position: selectedPosition, expectedAmount: amount }),
       });
 
-      const responseText = await response.text();
-      let data: { error?: string; init_point?: string } = {};
+      const data = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        code?: string;
+        amount?: number;
+        init_point?: string;
+      };
 
-      try {
-        data = JSON.parse(responseText);
-      } catch {
-        data = { error: "El servidor devolvió una respuesta no válida." };
+      if (response.status === 409 && typeof data.amount === "number") {
+        setQuotedAmount(data.amount);
+        setNotice(data.error ?? "El precio cambió.");
+        setLoading(false);
+        return;
       }
 
       if (!response.ok) {
-        alert(data.error || "No se pudo iniciar el pago.");
+        setError(data.error || "No se pudo iniciar el pago.");
         setLoading(false);
         return;
       }
 
       if (!data.init_point) {
-        alert("Mercado Pago no devolvió la dirección de pago.");
+        setError("Mercado Pago no devolvió la dirección de pago.");
         setLoading(false);
         return;
       }
 
       window.location.assign(data.init_point);
-    } catch (error) {
-      console.error("Error al conectar con Mercado Pago:", error);
-      alert("No se pudo conectar con Mercado Pago.");
+    } catch {
+      setError("No se pudo conectar con el servidor. Inténtalo de nuevo.");
       setLoading(false);
     }
   }
 
+  const nextParam = selectedPosition
+    ? `?next=${encodeURIComponent(`/?position=${selectedPosition}`)}`
+    : "";
+
   return (
     <>
-      <section className="mx-auto max-w-4xl px-6 pb-20">
+      <Container width="content" className="pb-20">
         <div className="mb-6">
-          <p className="text-sm font-bold uppercase tracking-[0.25em] text-sky-500">
-            Ranking actual
-          </p>
-
-          <h2 className="mt-1 text-3xl font-black text-neutral-950">
+          <Eyebrow>Ranking actual</Eyebrow>
+          <Heading as="h2" className="mt-1">
             Los que están arriba
-          </h2>
-
-          <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
-            Negocios reales compitiendo por atención en México.
-          </p>
+          </Heading>
+          <Muted className="mt-2">
+            Cada posición es un espacio disponible para competir. Pasa el cursor o toca un
+            negocio para ver su anuncio.
+          </Muted>
         </div>
 
         <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
@@ -160,11 +182,11 @@ export default function Ranking({ businesses, initialPosition = null }: Props) {
               key={category}
               type="button"
               onClick={() => setActiveCategory(category)}
-              className={`shrink-0 rounded-full px-4 py-2 text-sm font-bold transition ${
+              className={
                 activeCategory === category
-                  ? "bg-neutral-950 text-white dark:bg-sky-400 dark:text-neutral-950"
-                  : "border border-neutral-200 bg-white text-neutral-600 hover:border-sky-300 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300"
-              }`}
+                  ? "shrink-0 rounded-full bg-neutral-950 px-4 py-2 text-sm font-bold text-white"
+                  : "shrink-0 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-bold text-neutral-600 transition hover:border-brand-300"
+              }
             >
               {category}
             </button>
@@ -173,7 +195,8 @@ export default function Ranking({ businesses, initialPosition = null }: Props) {
 
         <div className="space-y-4">
           {positions.map((position) => {
-            const business = getBusinessForPosition(position);
+            const business = businessAt(position);
+
             if (
               activeCategory !== "Todas" &&
               (!business || business.category !== activeCategory)
@@ -181,273 +204,105 @@ export default function Ranking({ businesses, initialPosition = null }: Props) {
               return null;
             }
 
-            if (business) {
-              return (
-                <div
-                  key={position}
-                  className={`flex w-full items-center gap-4 rounded-2xl border p-4 ${
-                    position === 1
-                      ? "border-yellow-300 bg-yellow-50"
-                      : position === 2
-                        ? "border-neutral-300 bg-neutral-50"
-                        : position === 3
-                          ? "border-orange-200 bg-orange-50"
-                          : "border-neutral-200 bg-white"
-                  }`}
-                >
-                  <Link
-                    href={`/business/${business.id}`}
-                    onClick={() => trackBusinessClick(business.id)}
-                    className="flex min-w-0 flex-1 items-center gap-4"
-                  >
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-neutral-100 text-lg font-black">
-                      {position === 1
-                        ? "🥇"
-                        : position === 2
-                          ? "🥈"
-                          : position === 3
-                            ? "🥉"
-                            : `#${position}`}
-                    </div>
-
-                    <div className="min-w-0">
-                      <p className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-                        Posición #{position}
-                      </p>
-
-                      <h3 className="truncate text-lg font-bold">
-                        {business.name}
-                      </h3>
-
-                      <p className="text-sm text-neutral-500">
-                        {business.category || "Sin categoría"}
-                      </p>
-                    </div>
-                  </Link>
-
-                  <div className="text-right">
-                    <p className="text-xs text-neutral-400">
-                      Oferta actual
-                    </p>
-
-                    <p className="font-black text-sky-500">
-                      $
-                      {Number(
-                        business.current_price ?? 0
-                      ).toLocaleString("es-MX")}{" "}
-                      MXN
-                    </p>
-
-                    <button
-                      onClick={() => openPosition(position)}
-                      className="mt-2 rounded-full bg-sky-400 px-4 py-2 text-xs font-bold text-white"
-                    >
-                      SUPERAR
-                    </button>
-                  </div>
-                </div>
-              );
-            }
-
             return (
-              <div
+              <RankingCard
                 key={position}
-                className="flex w-full items-center gap-4 rounded-2xl border-2 border-dashed border-neutral-300 bg-white p-5"
-              >
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-neutral-100 text-lg font-black text-neutral-500">
-                  #{position}
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold uppercase tracking-wider text-sky-500">
-                    Posición #{position}
-                  </p>
-
-                  <h3 className="mt-1 text-lg font-black">
-                    POSICIÓN DISPONIBLE
-                  </h3>
-
-                  <p className="mt-1 text-sm text-neutral-500">
-                    Haz que tu negocio aparezca aquí.
-                  </p>
-
-                  <p className="mt-2 text-sm font-bold">
-                    Desde $
-                    {getInitialPrice(position).toLocaleString(
-                      "es-MX"
-                    )}{" "}
-                    MXN
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => openPosition(position)}
-                  className="shrink-0 rounded-full bg-neutral-900 px-4 py-2 text-xs font-bold text-white"
-                >
-                  OCUPAR
-                </button>
-              </div>
+                position={position}
+                business={business}
+                onBid={openPosition}
+                reservation={reservationAt(position)}
+                minimumOffer={minimumOfferAt(position)}
+                isOwn={Boolean(business && viewer.business && business.id === viewer.business.id)}
+              />
             );
           })}
         </div>
-      </section>
+      </Container>
 
       {selectedPosition !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/50 px-6">
-          <div className="w-full max-w-md rounded-3xl bg-white p-7 shadow-2xl">
-
-            {!confirmed ? (
-              <>
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-sm font-bold uppercase tracking-widest text-sky-500">
-                      Posición #{selectedPosition}
+        <Modal
+          onClose={closeModal}
+          eyebrow={`Posición #${selectedPosition}`}
+          title={
+            ownsSelected
+              ? "Blinda tu posición"
+              : selectedBusiness
+                ? "Superar posición"
+                : "Ocupa esta posición"
+          }
+        >
+          {!viewer.loggedIn ? (
+            <div className="mt-6">
+              <p className="text-sm leading-6 text-neutral-600">
+                Para ofertar necesitas una cuenta de negocio. Es gratis: te registras,
+                completas tu perfil y pagas solo cuando quieras publicarte.
+              </p>
+              <Button href={`/registro${nextParam}`} size="lg" block className="mt-5">
+                REGISTRA TU NEGOCIO
+              </Button>
+              <Button href={`/ingresar${nextParam}`} variant="ghost" block className="mt-3 py-3">
+                Ya tengo cuenta
+              </Button>
+            </div>
+          ) : !viewer.business ? (
+            <p className="mt-6 text-sm text-neutral-600">
+              No encontramos un negocio ligado a tu cuenta.
+            </p>
+          ) : viewer.business.missing.length > 0 ? (
+            <div className="mt-6">
+              <p className="text-sm leading-6 text-neutral-600">
+                Antes de publicar, completa tu perfil. Falta:
+              </p>
+              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-neutral-600">
+                {viewer.business.missing.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+              <Button href="/mi-negocio" size="lg" block className="mt-5">
+                COMPLETAR MI PERFIL
+              </Button>
+            </div>
+          ) : viewer.business.position !== null && selectedPosition > viewer.business.position ? (
+            <p className="mt-6 text-sm leading-6 text-neutral-600">
+              Ya ocupas la posición #{viewer.business.position}, que es mejor que la #
+              {selectedPosition}. Elige una posición más alta.
+            </p>
+          ) : (
+            <>
+              <div className="mt-6 rounded-2xl bg-brand-50 p-5">
+                {selectedBusiness && (
+                  <>
+                    <Muted>{ownsSelected ? "Tu oferta actual" : "Oferta actual"}</Muted>
+                    <p className="mt-1">
+                      <Price value={selectedBusiness.current_price} />
                     </p>
+                    <div className="my-4 h-px bg-brand-100" />
+                  </>
+                )}
 
-                    <h2 className="mt-2 text-3xl font-black">
-                      {selectedBusiness
-                        ? "Superar posición"
-                        : "Ocupa esta posición"}
-                    </h2>
-                  </div>
-
-                  <button
-                    onClick={closeModal}
-                    className="text-2xl text-neutral-400"
-                  >
-                    ×
-                  </button>
-                </div>
-
-                <div className="mt-6 rounded-2xl bg-sky-50 p-5">
-                  <p className="text-sm text-neutral-500">
-                    {selectedBusiness
-                      ? "Oferta actual"
-                      : "Precio de esta posición"}
-                  </p>
-
-                  <p className="mt-1 text-3xl font-black text-sky-500">
-                    $
-                    {Number(currentPrice).toLocaleString(
-                      "es-MX"
-                    )}{" "}
-                    MXN
-                  </p>
-
-                  <div className="my-4 h-px bg-sky-100" />
-
-                  <p className="text-sm text-neutral-500">
-                    Tu oferta mínima
-                  </p>
-
-                  <p className="mt-1 text-xl font-bold">
-                    $
-                    {minimumOffer.toLocaleString(
-                      "es-MX"
-                    )}{" "}
-                    MXN
-                  </p>
-                </div>
-
-                <label className="mt-6 block text-sm font-bold">
-                  Nombre de tu negocio
-                </label>
-
-                <input
-                  value={businessName}
-                  onChange={(event) =>
-                    setBusinessName(event.target.value)
-                  }
-                  placeholder="Ej. Restaurante El N1"
-                  className="mt-2 w-full rounded-xl border border-neutral-300 px-4 py-3 outline-none focus:border-sky-400"
-                />
-
-                <label className="mt-5 block text-sm font-bold">
-                  Categoría
-                </label>
-
-                <input
-                  value={businessCategory}
-                  onChange={(event) => setBusinessCategory(event.target.value)}
-                  list="business-categories"
-                  placeholder="Elige o escribe una categoría"
-                  maxLength={60}
-                  required
-                  className="mt-2 w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none focus:border-sky-400 dark:bg-neutral-900"
-                />
-                <datalist id="business-categories">
-                  {BUSINESS_CATEGORIES.map((category) => <option key={category} value={category} />)}
-                </datalist>
-
-                <button
-                  onClick={continueToConfirmation}
-                  disabled={!businessName.trim()}
-                  className="mt-5 w-full rounded-xl bg-sky-400 px-5 py-4 font-bold text-white disabled:opacity-40"
-                >
-                  CONTINUAR
-                </button>
-
-                <p className="mt-4 text-center text-xs text-neutral-400">
-                  Siguiente paso: confirmar y pagar.
-                </p>
-              </>
-            ) : (
-              <>
-                <p className="text-sm font-bold uppercase tracking-widest text-sky-500">
-                  Confirmar oferta
+                <Muted>{ownsSelected ? "Nueva oferta para blindarte" : "Tu oferta"}</Muted>
+                <p className="mt-1">
+                  <Price value={amount} size="lg" tone="ink" />
                 </p>
 
-                <h2 className="mt-2 text-3xl font-black">
-                  Estás por ocupar la posición #{selectedPosition}
-                </h2>
+                {reservationAt(selectedPosition) && (
+                  <p className="mt-2 text-xs text-amber-700">
+                    🔒 Hay una reserva activa sobre esta posición; tu oferta ya la supera.
+                  </p>
+                )}
+              </div>
 
-                <div className="mt-6 space-y-4 rounded-2xl bg-neutral-50 p-5">
-                  <div className="flex justify-between gap-4">
-                    <span className="text-neutral-500">
-                      Negocio
-                    </span>
-
-                    <span className="text-right font-bold">
-                      {businessName}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between gap-4">
-                    <span className="text-neutral-500">Categoría</span>
-                    <span className="text-right font-bold">{businessCategory}</span>
-                  </div>
-
-                  <div className="flex justify-between">
-                    <span className="text-neutral-500">
-                      Posición
-                    </span>
-
-                    <span className="font-bold">
-                      #{selectedPosition}
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between">
-                    <span className="text-neutral-500">
-                      Tu oferta
-                    </span>
-
-                    <span className="text-xl font-black text-sky-500">
-                      $
-                      {minimumOffer.toLocaleString(
-                        "es-MX"
-                      )}{" "}
-                      MXN
-                    </span>
-                  </div>
-                </div>
-
-                <p className="mt-5 text-sm leading-6 text-neutral-500">
-                  Al continuar serás enviado a Mercado Pago.
-                  Tu posición se asignará una vez confirmado el pago.
+              <div className="mt-5 space-y-2 text-sm text-neutral-500">
+                <p>
+                  Negocio:{" "}
+                  <span className="font-bold text-neutral-800">{viewer.business.name}</span>
                 </p>
-
-                <p className="mt-3 text-xs leading-5 text-neutral-400">
+                <p>
+                  Al continuar reservamos la posición a este precio durante {RESERVATION_MINUTES}{" "}
+                  minutos y te enviamos a Mercado Pago. La posición se asigna al confirmarse el
+                  pago.
+                </p>
+                <p className="text-xs leading-5 text-neutral-400">
                   Al continuar aceptas los{" "}
                   <Link href="/terminos" className="underline">
                     términos y condiciones
@@ -458,28 +313,37 @@ export default function Ranking({ businesses, initialPosition = null }: Props) {
                   </Link>
                   .
                 </p>
+              </div>
 
-                <button
-                  onClick={continueToPayment}
-                  disabled={loading}
-                  className="mt-5 w-full rounded-xl bg-sky-400 px-5 py-4 font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {loading
-                    ? "CONECTANDO CON MERCADO PAGO..."
-                    : "CONTINUAR AL PAGO"}
-                </button>
+              {notice && (
+                <Alert tone="warning" compact className="mt-4">
+                  {notice}
+                </Alert>
+              )}
 
-                <button
-                  onClick={() => setConfirmed(false)}
-                  disabled={loading}
-                  className="mt-3 w-full py-3 text-sm font-bold text-neutral-500"
-                >
-                  REGRESAR
-                </button>
-              </>
-            )}
-          </div>
-        </div>
+              {error && (
+                <Alert tone="error" compact className="mt-4">
+                  {error}
+                </Alert>
+              )}
+
+              <Button
+                variant="accent"
+                size="lg"
+                block
+                onClick={reserveAndPay}
+                disabled={loading}
+                className="mt-5"
+              >
+                {loading
+                  ? "RESERVANDO..."
+                  : notice
+                    ? `OFERTAR ${formatPrice(amount)}`
+                    : "RESERVAR Y PAGAR"}
+              </Button>
+            </>
+          )}
+        </Modal>
       )}
     </>
   );
