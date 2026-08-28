@@ -1,3 +1,5 @@
+import "server-only";
+
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 
@@ -15,9 +17,7 @@ function getAdminPassword() {
 }
 
 function sign(value: string) {
-  return createHmac("sha256", getAdminPassword())
-    .update(value)
-    .digest("hex");
+  return createHmac("sha256", getAdminPassword()).update(value).digest("hex");
 }
 
 export function createAdminSession() {
@@ -42,8 +42,7 @@ export function isValidAdminPassword(password: string) {
   const received = Buffer.from(password);
 
   return (
-    expected.length === received.length &&
-    timingSafeEqual(expected, received)
+    expected.length === received.length && timingSafeEqual(expected, received)
   );
 }
 
@@ -60,8 +59,7 @@ export async function hasAdminSession() {
     const received = Buffer.from(signature);
 
     return (
-      expected.length === received.length &&
-      timingSafeEqual(expected, received)
+      expected.length === received.length && timingSafeEqual(expected, received)
     );
   } catch {
     return false;
