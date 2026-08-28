@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import AuthShell from "../auth/AuthShell";
+import AuthShell from "@/app/auth/AuthShell";
 import { RegisterForm } from "./register-form";
 import { Button, Muted } from "@/app/ui";
 

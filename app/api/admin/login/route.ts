@@ -1,15 +1,8 @@
 import { NextResponse } from "next/server";
-import {
-  createAdminSession,
-  isValidAdminPassword,
-} from "../../../../lib/admin-auth";
-import { adminLoginSchema } from "../../../../lib/schemas";
-import { parseInput, readJson } from "../../../../lib/validation";
-import {
-  adminLoginLimiter,
-  clientIp,
-  tooManyRequests,
-} from "../../../../lib/rate-limit";
+import { createAdminSession, isValidAdminPassword } from "@/lib/admin-auth";
+import { adminLoginSchema } from "@/lib/schemas";
+import { parseInput, readJson } from "@/lib/validation";
+import { adminLoginLimiter, clientIp, tooManyRequests } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   try {

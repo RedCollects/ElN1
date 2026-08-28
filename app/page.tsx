@@ -1,12 +1,12 @@
 import Ranking, { type Viewer } from "./Ranking";
 import PaymentNotice from "./PaymentNotice";
 import SiteExperience from "./SiteExperience";
-import { createPublicSupabaseClient } from "../lib/supabase-public";
-import { createServerSupabaseClient } from "../lib/supabase-server";
-import { getCurrentUser } from "../lib/supabase-auth";
-import { isValidPosition, MAX_RANKING_POSITION } from "../lib/prices";
-import { missingForPublish } from "../lib/business";
-import type { Reservation } from "../lib/payments";
+import { createPublicSupabaseClient } from "@/lib/supabase-public";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { getCurrentUser } from "@/lib/supabase-auth";
+import { isValidPosition, MAX_RANKING_POSITION } from "@/lib/prices";
+import { missingForPublish } from "@/lib/business";
+import type { Reservation } from "@/lib/payments";
 import {
   Button,
   Container,

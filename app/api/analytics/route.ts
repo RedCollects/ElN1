@@ -1,12 +1,8 @@
 import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "../../../lib/supabase-server";
-import { analyticsSchema } from "../../../lib/schemas";
-import { parseInput, readJson } from "../../../lib/validation";
-import {
-  analyticsLimiter,
-  clientIp,
-  tooManyRequests,
-} from "../../../lib/rate-limit";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { analyticsSchema } from "@/lib/schemas";
+import { parseInput, readJson } from "@/lib/validation";
+import { analyticsLimiter, clientIp, tooManyRequests } from "@/lib/rate-limit";
 
 function mexicoDate() {
   return new Intl.DateTimeFormat("en-CA", {

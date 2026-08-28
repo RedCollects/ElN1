@@ -1,11 +1,14 @@
 "use client";
 
 import { useActionState } from "react";
-import { signUp, type AuthState } from "../auth/actions";
+import { signUp, type AuthState } from "@/app/auth/actions";
 import { Alert, Button, Field, Input } from "@/app/ui";
 
 export function RegisterForm({ next }: { next?: string }) {
-  const [state, action, pending] = useActionState<AuthState, FormData>(signUp, {});
+  const [state, action, pending] = useActionState<AuthState, FormData>(
+    signUp,
+    {},
+  );
 
   return (
     <form action={action} className="mt-6 space-y-4">

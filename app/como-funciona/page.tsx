@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
-import { INITIAL_PRICES, MAX_RANKING_POSITION, OUTBID_FACTOR } from "../../lib/prices";
-import { RESERVATION_MINUTES } from "../../lib/payments";
-import { BIG_AD_MAX_POSITION } from "../../lib/business";
-import { formatPrice } from "../../lib/format";
+import {
+  INITIAL_PRICES,
+  MAX_RANKING_POSITION,
+  OUTBID_FACTOR,
+} from "@/lib/prices";
+import { RESERVATION_MINUTES } from "@/lib/payments";
+import { BIG_AD_MAX_POSITION } from "@/lib/business";
+import { formatPrice } from "@/lib/format";
 import {
   Button,
   Container,
@@ -100,7 +104,7 @@ const FAQ = [
       "Por ahora no: esos pagos se confirman horas o días después, fuera de la ventana de reserva. Aceptamos tarjeta de crédito, débito y saldo de Mercado Pago.",
   },
   {
-    question: "¿Y el leaderboard de \"Más visitados\"?",
+    question: '¿Y el leaderboard de "Más visitados"?',
     answer:
       "Es informativo: cuenta cuántas personas abren cada negocio. No cambia posiciones ni se compra. La única forma de subir en el ranking es ofertar.",
   },
@@ -131,9 +135,10 @@ export default function ComoFuncionaPage() {
           </Heading>
 
           <Lead className="mt-6 text-neutral-600">
-            EL N1 es un ranking público de negocios de México con {MAX_RANKING_POSITION}{" "}
-            lugares. No se gana con votos ni con reseñas: se gana pagando más que el que está
-            arriba. El que más ofrece es EL N1, hasta que alguien lo supere.
+            EL N1 es un ranking público de negocios de México con{" "}
+            {MAX_RANKING_POSITION} lugares. No se gana con votos ni con reseñas:
+            se gana pagando más que el que está arriba. El que más ofrece es EL
+            N1, hasta que alguien lo supere.
           </Lead>
 
           <section className="mt-14">
@@ -147,13 +152,15 @@ export default function ComoFuncionaPage() {
                   key={step.title}
                   className="flex gap-5 rounded-2xl border border-neutral-200 p-5"
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand font-black text-white">
+                  <div className="bg-brand flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-black text-white">
                     {index + 1}
                   </div>
 
                   <div>
                     <h3 className="font-bold">{step.title}</h3>
-                    <p className="mt-1 text-sm leading-6 text-neutral-500">{step.body}</p>
+                    <p className="mt-1 text-sm leading-6 text-neutral-500">
+                      {step.body}
+                    </p>
                   </div>
                 </li>
               ))}
@@ -166,13 +173,13 @@ export default function ComoFuncionaPage() {
             </Heading>
 
             <Muted className="mt-2">
-              Lo que cuesta cada posición cuando está libre. Si está ocupada, la oferta mínima
-              es un {OUTBID_PERCENT} % más que la oferta actual.
+              Lo que cuesta cada posición cuando está libre. Si está ocupada, la
+              oferta mínima es un {OUTBID_PERCENT} % más que la oferta actual.
             </Muted>
 
             <div className="mt-6 overflow-x-auto rounded-2xl border border-neutral-200">
               <table className="w-full text-left text-sm">
-                <thead className="bg-neutral-50 text-xs font-bold uppercase tracking-wider text-neutral-400">
+                <thead className="bg-neutral-50 text-xs font-bold tracking-wider text-neutral-400 uppercase">
                   <tr>
                     <th className="px-5 py-3">Posición</th>
                     <th className="px-5 py-3 text-right">Precio de salida</th>
@@ -182,7 +189,7 @@ export default function ComoFuncionaPage() {
                   {positions.map((position) => (
                     <tr key={position} className="border-t border-neutral-100">
                       <td className="px-5 py-3 font-bold">#{position}</td>
-                      <td className="px-5 py-3 text-right font-bold text-brand-500">
+                      <td className="text-brand-500 px-5 py-3 text-right font-bold">
                         {formatPrice(INITIAL_PRICES[position])}
                       </td>
                     </tr>
@@ -191,7 +198,7 @@ export default function ComoFuncionaPage() {
                     <td className="px-5 py-3 font-bold">
                       #{PRICED_POSITIONS + 1} a #{MAX_RANKING_POSITION}
                     </td>
-                    <td className="px-5 py-3 text-right font-bold text-brand-500">
+                    <td className="text-brand-500 px-5 py-3 text-right font-bold">
                       {formatPrice(INITIAL_PRICES[MAX_RANKING_POSITION])}
                     </td>
                   </tr>
@@ -209,7 +216,9 @@ export default function ComoFuncionaPage() {
               {RULES.map((rule) => (
                 <div key={rule.title}>
                   <dt className="font-bold">{rule.title}</dt>
-                  <dd className="mt-1 leading-7 text-neutral-600">{rule.body}</dd>
+                  <dd className="mt-1 leading-7 text-neutral-600">
+                    {rule.body}
+                  </dd>
                 </div>
               ))}
             </dl>
@@ -224,7 +233,9 @@ export default function ComoFuncionaPage() {
               {FAQ.map((item) => (
                 <div key={item.question}>
                   <dt className="font-bold">{item.question}</dt>
-                  <dd className="mt-1 leading-7 text-neutral-600">{item.answer}</dd>
+                  <dd className="mt-1 leading-7 text-neutral-600">
+                    {item.answer}
+                  </dd>
                 </div>
               ))}
             </dl>

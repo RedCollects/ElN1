@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "../../../lib/supabase-server";
-import type { Reservation } from "../../../lib/payments";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
+import type { Reservation } from "@/lib/payments";
 
 /** Reservas vigentes por posición, para el contador en vivo del ranking. */
 export async function GET() {
@@ -13,18 +13,25 @@ export async function GET() {
     }
 
     const reservations: Reservation[] = (data ?? []).map(
-      (row: { ranking_position: number; amount: number | string; expires_at: string }) => ({
+      (row: {
+        ranking_position: number;
+        amount: number | string;
+        expires_at: string;
+      }) => ({
         position: row.ranking_position,
         amount: Number(row.amount),
         expiresAt: row.expires_at,
-      })
+      }),
     );
 
     return NextResponse.json(
       { reservations, now: new Date().toISOString() },
-      { headers: { "Cache-Control": "no-store" } }
+      { headers: { "Cache-Control": "no-store" } },
     );
   } catch {
-    return NextResponse.json({ error: "Error interno del servidor." }, { status: 500 });
+    return NextResponse.json(
+      { error: "Error interno del servidor." },
+      { status: 500 },
+    );
   }
 }

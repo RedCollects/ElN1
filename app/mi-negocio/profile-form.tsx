@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { CATEGORIES, FIELD_LIMITS, type Business } from "../../lib/business";
+import { CATEGORIES, FIELD_LIMITS, type Business } from "@/lib/business";
 import { updateProfile, type ProfileState } from "./actions";
 import {
   Alert,
@@ -23,7 +23,10 @@ type Props = {
 };
 
 export function ProfileForm({ business, onChange }: Props) {
-  const [state, action, pending] = useActionState<ProfileState, FormData>(updateProfile, {});
+  const [state, action, pending] = useActionState<ProfileState, FormData>(
+    updateProfile,
+    {},
+  );
 
   return (
     <form
@@ -31,10 +34,18 @@ export function ProfileForm({ business, onChange }: Props) {
       onChange={(event) => onChange?.(event.currentTarget)}
       className="space-y-6"
     >
-      <CardSection title="Lo básico" description="Lo que se ve en la tarjeta del ranking.">
+      <CardSection
+        title="Lo básico"
+        description="Lo que se ve en la tarjeta del ranking."
+      >
         <div className={gridClassName}>
           <Field label="Nombre del negocio *">
-            <Input name="name" required maxLength={FIELD_LIMITS.name} defaultValue={business.name} />
+            <Input
+              name="name"
+              required
+              maxLength={FIELD_LIMITS.name}
+              defaultValue={business.name}
+            />
           </Field>
 
           <Field label="Categoría *">
@@ -137,12 +148,17 @@ export function ProfileForm({ business, onChange }: Props) {
       >
         <div className={gridClassName}>
           {(["instagram", "facebook", "tiktok"] as const).map((network) => (
-            <Field key={network} label={network[0].toUpperCase() + network.slice(1)}>
+            <Field
+              key={network}
+              label={network[0].toUpperCase() + network.slice(1)}
+            >
               <PrefixedInput
                 prefix="@"
                 name={network}
                 maxLength={FIELD_LIMITS[network]}
-                defaultValue={business[network]?.replace(/^https?:\/\/[^/]+\/@?/, "") ?? ""}
+                defaultValue={
+                  business[network]?.replace(/^https?:\/\/[^/]+\/@?/, "") ?? ""
+                }
                 placeholder="usuario"
               />
             </Field>

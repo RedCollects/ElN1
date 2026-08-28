@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server";
 import { MercadoPagoConfig, Preference } from "mercadopago";
-import { createServerSupabaseClient } from "../../../lib/supabase-server";
-import { getCurrentUser } from "../../../lib/supabase-auth";
-import { minimumOfferFor } from "../../../lib/prices";
-import { checkoutSchema } from "../../../lib/schemas";
-import { parseInput, readJson } from "../../../lib/validation";
-import { checkoutLimiter, tooManyRequests } from "../../../lib/rate-limit";
-import { missingForPublish } from "../../../lib/business";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { getCurrentUser } from "@/lib/supabase-auth";
+import { minimumOfferFor } from "@/lib/prices";
+import { checkoutSchema } from "@/lib/schemas";
+import { parseInput, readJson } from "@/lib/validation";
+import { checkoutLimiter, tooManyRequests } from "@/lib/rate-limit";
+import { missingForPublish } from "@/lib/business";
 import {
   RESERVATION_MINUTES,
   allowCashPayments,
   mercadoPagoDate,
-} from "../../../lib/payments";
+} from "@/lib/payments";
 
 /**
  * Inicia una oferta: valida al dueño y su perfil, calcula el importe contra

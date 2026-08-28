@@ -82,7 +82,7 @@ Al volver de Mercado Pago, la portada muestra un aviso según `?payment=success|
 - Aplicar la migración en Supabase.
 - Configurar las variables privadas en el proveedor de hosting, incluido `MERCADOPAGO_WEBHOOK_SECRET`.
 - Configurar el webhook con la URL HTTPS de producción.
-- Proteger `/admin` y `/api/admin` con autenticación y autorización.
+- Proteger `/admin` (página, Server Actions y `/api/admin/login`) con autenticación y autorización.
 - Configurar `ADMIN_PASSWORD` antes de abrir el panel.
 - Crear la base de Upstash Redis y configurar `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`.
 - Configurar políticas RLS y probar pagos aprobados, rechazados, pendientes y repetidos.

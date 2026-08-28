@@ -1,8 +1,8 @@
 "use client";
 
-import { contactLinks, type Business } from "../../lib/business";
+import { contactLinks, type Business } from "@/lib/business";
 import { Avatar, Button, Muted } from "@/app/ui";
-import { trackBusinessClick } from "../SiteExperience";
+import { trackBusinessClick } from "@/app/SiteExperience";
 import { SmartImage } from "./SmartImage";
 
 type Props = {
@@ -17,11 +17,13 @@ type Props = {
  */
 export function BusinessAd({ business, profileHref }: Props) {
   const links = contactLinks(business);
-  const subtitle = [business.category, business.city].filter(Boolean).join(" · ");
+  const subtitle = [business.category, business.city]
+    .filter(Boolean)
+    .join(" · ");
 
   return (
     <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
-      <div className="relative aspect-[16/7] w-full bg-gradient-to-br from-brand to-brand-600">
+      <div className="from-brand to-brand-600 relative aspect-[16/7] w-full bg-gradient-to-br">
         {business.cover_url && (
           <SmartImage
             src={business.cover_url}
@@ -41,12 +43,16 @@ export function BusinessAd({ business, profileHref }: Props) {
           className="-mt-10 bg-white"
         />
 
-        <h3 className="mt-3 text-2xl font-black leading-tight">{business.name}</h3>
+        <h3 className="mt-3 text-2xl leading-tight font-black">
+          {business.name}
+        </h3>
 
         {subtitle && <Muted className="mt-1">{subtitle}</Muted>}
 
         {business.tagline && (
-          <p className="mt-3 text-base leading-6 text-neutral-700">{business.tagline}</p>
+          <p className="mt-3 text-base leading-6 text-neutral-700">
+            {business.tagline}
+          </p>
         )}
 
         {links.length > 0 && (

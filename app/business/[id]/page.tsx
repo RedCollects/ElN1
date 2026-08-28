@@ -1,6 +1,6 @@
-import { createPublicSupabaseClient } from "../../../lib/supabase-public";
-import { contactLinks } from "../../../lib/business";
-import { SmartImage } from "../../components/SmartImage";
+import { createPublicSupabaseClient } from "@/lib/supabase-public";
+import { contactLinks } from "@/lib/business";
+import { SmartImage } from "@/app/components/SmartImage";
 import {
   Avatar,
   Button,

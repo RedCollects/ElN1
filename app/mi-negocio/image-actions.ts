@@ -1,9 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getCurrentUser } from "../../lib/supabase-auth";
-import { createServerSupabaseClient } from "../../lib/supabase-server";
-import { processImage } from "../../lib/images-server";
+import { getCurrentUser } from "@/lib/supabase-auth";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { processImage } from "@/lib/images-server";
 import {
   ACCEPTED_IMAGE_TYPES,
   IMAGE_SPECS,
@@ -11,8 +11,8 @@ import {
   imageColumn,
   storagePathFromUrl,
   type ImageKind,
-} from "../../lib/image-specs";
-import type { TablesUpdate } from "../../lib/database.types";
+} from "@/lib/image-specs";
+import type { TablesUpdate } from "@/lib/database.types";
 
 export type ImageState = {
   error?: string;

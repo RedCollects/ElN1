@@ -1,10 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getCurrentUser } from "../../lib/supabase-auth";
-import { createServerSupabaseClient } from "../../lib/supabase-server";
-import { profileSchema } from "../../lib/schemas";
-import { formDataToObject, parseInput } from "../../lib/validation";
+import { getCurrentUser } from "@/lib/supabase-auth";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { profileSchema } from "@/lib/schemas";
+import { formDataToObject, parseInput } from "@/lib/validation";
 
 export type ProfileState = {
   error?: string;

@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "../../lib/supabase-auth";
-import { createServerSupabaseClient } from "../../lib/supabase-server";
-import { missingForPublish } from "../../lib/business";
-import { formatPrice } from "../../lib/format";
-import { signOut } from "../auth/actions";
+import { getCurrentUser } from "@/lib/supabase-auth";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { missingForPublish } from "@/lib/business";
+import { formatPrice } from "@/lib/format";
+import { signOut } from "@/app/auth/actions";
 import { BusinessEditor } from "./business-editor";
 import {
   Alert,

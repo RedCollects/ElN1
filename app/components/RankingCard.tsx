@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { hasBigAd, type Business } from "../../lib/business";
-import { INITIAL_PRICES } from "../../lib/prices";
-import type { Reservation } from "../../lib/payments";
-import { formatPrice } from "../../lib/format";
+import { hasBigAd, type Business } from "@/lib/business";
+import { INITIAL_PRICES } from "@/lib/prices";
+import type { Reservation } from "@/lib/payments";
+import { formatPrice } from "@/lib/format";
 import { Avatar, Button, Eyebrow, Price, cn } from "@/app/ui";
 import { BusinessAd } from "./BusinessAd";
 import { Countdown } from "./Countdown";
@@ -73,26 +73,41 @@ export function RankingCard({
     return (
       <div className="w-full rounded-2xl border-2 border-dashed border-neutral-300 bg-white p-5">
         <div className="flex items-center gap-4">
-          <Avatar src={null} alt="" size="sm" fallback={`#${position}`} className="text-neutral-500" />
+          <Avatar
+            src={null}
+            alt=""
+            size="sm"
+            fallback={`#${position}`}
+            className="text-neutral-500"
+          />
 
           <div className="min-w-0 flex-1">
             <Eyebrow size="xs">Posición #{position}</Eyebrow>
             <h3 className="mt-1 text-lg font-black">POSICIÓN DISPONIBLE</h3>
-            <p className="mt-1 text-sm text-neutral-500">Haz que tu negocio aparezca aquí.</p>
+            <p className="mt-1 text-sm text-neutral-500">
+              Haz que tu negocio aparezca aquí.
+            </p>
             <p className="mt-2 text-sm font-bold">
               Desde {formatPrice(minimumOffer ?? INITIAL_PRICES[position])}
             </p>
           </div>
 
           {onBid && (
-            <Button size="sm" onClick={() => onBid(position)} className="shrink-0">
+            <Button
+              size="sm"
+              onClick={() => onBid(position)}
+              className="shrink-0"
+            >
               OCUPAR
             </Button>
           )}
         </div>
 
         {reservation && (
-          <ReservationNotice reservation={reservation} minimumOffer={minimumOffer} />
+          <ReservationNotice
+            reservation={reservation}
+            minimumOffer={minimumOffer}
+          />
         )}
       </div>
     );
@@ -100,7 +115,8 @@ export function RankingCard({
 
   const expandable = hasBigAd(position);
   const expanded = forceExpanded || (expandable && (pinned || hovered));
-  const profileHref = business.id && !forceExpanded ? `/business/${business.id}` : undefined;
+  const profileHref =
+    business.id && !forceExpanded ? `/business/${business.id}` : undefined;
   const subtitle = [business.category || "Sin categoría", business.city]
     .filter(Boolean)
     .join(" · ");
@@ -110,7 +126,7 @@ export function RankingCard({
       className={cn(
         "w-full rounded-2xl border",
         POSITION_STYLES[position] ?? "border-neutral-200 bg-white",
-        isOwn && "ring-2 ring-brand-300"
+        isOwn && "ring-brand-300 ring-2",
       )}
       onPointerEnter={(event) => {
         if (event.pointerType === "mouse") setHovered(true);
@@ -137,7 +153,8 @@ export function RankingCard({
 
             <div className="min-w-0">
               <Eyebrow size="xs" tone="muted">
-                {MEDALS[position] ? `${MEDALS[position]} ` : ""}Posición #{position}
+                {MEDALS[position] ? `${MEDALS[position]} ` : ""}Posición #
+                {position}
                 {isOwn ? " · Tu negocio" : ""}
               </Eyebrow>
               <h3 className="truncate text-lg font-bold">{business.name}</h3>
@@ -151,7 +168,11 @@ export function RankingCard({
 
             {onBid && (
               <div className="mt-2">
-                <Button variant="accent" size="sm" onClick={() => onBid(position)}>
+                <Button
+                  variant="accent"
+                  size="sm"
+                  onClick={() => onBid(position)}
+                >
                   {isOwn ? "BLINDAR" : "SUPERAR"}
                 </Button>
               </div>
@@ -160,7 +181,10 @@ export function RankingCard({
         </div>
 
         {reservation && (
-          <ReservationNotice reservation={reservation} minimumOffer={minimumOffer} />
+          <ReservationNotice
+            reservation={reservation}
+            minimumOffer={minimumOffer}
+          />
         )}
       </div>
 
@@ -168,7 +192,7 @@ export function RankingCard({
         <div
           className={cn(
             "grid transition-[grid-template-rows] duration-300 ease-out",
-            expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
+            expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
           )}
         >
           <div className="overflow-hidden">

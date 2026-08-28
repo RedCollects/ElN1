@@ -2,10 +2,10 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { authLimiter, clientIp } from "../../lib/rate-limit";
-import { createAuthSupabaseClient } from "../../lib/supabase-auth";
-import { signInSchema, signUpSchema } from "../../lib/schemas";
-import { formDataToObject, parseInput } from "../../lib/validation";
+import { authLimiter, clientIp } from "@/lib/rate-limit";
+import { createAuthSupabaseClient } from "@/lib/supabase-auth";
+import { signInSchema, signUpSchema } from "@/lib/schemas";
+import { formDataToObject, parseInput } from "@/lib/validation";
 
 export type AuthState = {
   error?: string;

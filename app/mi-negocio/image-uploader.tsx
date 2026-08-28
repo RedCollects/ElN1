@@ -6,8 +6,8 @@ import {
   ACCEPTED_IMAGE_TYPES,
   IMAGE_SPECS,
   type ImageKind,
-} from "../../lib/image-specs";
-import { SmartImage } from "../components/SmartImage";
+} from "@/lib/image-specs";
+import { SmartImage } from "@/app/components/SmartImage";
 import { Alert, Button, cn } from "@/app/ui";
 
 type Props = {
@@ -22,24 +22,24 @@ export function ImageUploader({ kind, currentUrl, onPreview }: Props) {
   const [localPreview, setLocalPreview] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const [uploadState, uploadAction, uploading] = useActionState<ImageState, FormData>(
-    async (previous, formData) => {
-      const result = await uploadImage(kind, previous, formData);
+  const [uploadState, uploadAction, uploading] = useActionState<
+    ImageState,
+    FormData
+  >(async (previous, formData) => {
+    const result = await uploadImage(kind, previous, formData);
 
-      if (result.success) {
-        setLocalPreview(null);
-        onPreview?.(null);
-        if (inputRef.current) inputRef.current.value = "";
-      }
+    if (result.success) {
+      setLocalPreview(null);
+      onPreview?.(null);
+      if (inputRef.current) inputRef.current.value = "";
+    }
 
-      return result;
-    },
-    {}
-  );
-  const [removeState, removeAction, removing] = useActionState<ImageState, FormData>(
-    async () => removeImage(kind),
-    {}
-  );
+    return result;
+  }, {});
+  const [removeState, removeAction, removing] = useActionState<
+    ImageState,
+    FormData
+  >(async () => removeImage(kind), {});
 
   useEffect(() => {
     return () => {
@@ -64,7 +64,8 @@ export function ImageUploader({ kind, currentUrl, onPreview }: Props) {
   }
 
   const shown = localPreview ?? currentUrl;
-  const aspectClassName = kind === "logo" ? "aspect-square w-40" : "aspect-video w-full";
+  const aspectClassName =
+    kind === "logo" ? "aspect-square w-40" : "aspect-video w-full";
   const error = uploadState.error ?? removeState.error;
 
   return (
@@ -75,7 +76,7 @@ export function ImageUploader({ kind, currentUrl, onPreview }: Props) {
       <div
         className={cn(
           "relative mt-3 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-100",
-          aspectClassName
+          aspectClassName,
         )}
       >
         {shown ? (
@@ -83,7 +84,9 @@ export function ImageUploader({ kind, currentUrl, onPreview }: Props) {
             src={shown}
             alt={spec.label}
             fill
-            sizes={kind === "logo" ? "160px" : "(min-width: 640px) 600px, 100vw"}
+            sizes={
+              kind === "logo" ? "160px" : "(min-width: 640px) 600px, 100vw"
+            }
             className="object-cover"
           />
         ) : (
@@ -94,12 +97,15 @@ export function ImageUploader({ kind, currentUrl, onPreview }: Props) {
       </div>
 
       {localPreview && (
-        <p className="mt-2 text-xs text-brand-600">
+        <p className="text-brand-600 mt-2 text-xs">
           Así se recortará. Pulsa «Subir» para guardarla.
         </p>
       )}
 
-      <form action={uploadAction} className="mt-3 flex flex-wrap items-center gap-3">
+      <form
+        action={uploadAction}
+        className="mt-3 flex flex-wrap items-center gap-3"
+      >
         <input
           ref={inputRef}
           type="file"
@@ -109,14 +115,25 @@ export function ImageUploader({ kind, currentUrl, onPreview }: Props) {
           className="block text-sm text-neutral-500 file:mr-3 file:rounded-full file:border-0 file:bg-neutral-900 file:px-4 file:py-2 file:text-xs file:font-bold file:text-white"
         />
 
-        <Button type="submit" variant="accent" size="sm" disabled={uploading || !localPreview}>
+        <Button
+          type="submit"
+          variant="accent"
+          size="sm"
+          disabled={uploading || !localPreview}
+        >
           {uploading ? "SUBIENDO..." : "SUBIR"}
         </Button>
       </form>
 
       {currentUrl && !localPreview && (
         <form action={removeAction} className="mt-2">
-          <Button type="submit" variant="ghost" size="sm" disabled={removing} className="underline">
+          <Button
+            type="submit"
+            variant="ghost"
+            size="sm"
+            disabled={removing}
+            className="underline"
+          >
             {removing ? "Quitando..." : "Quitar imagen"}
           </Button>
         </form>
