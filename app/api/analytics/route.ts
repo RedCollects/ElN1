@@ -2,6 +2,11 @@ import { NextResponse } from "next/server";
 import { createServerSupabaseClient } from "../../../lib/supabase-server";
 import { analyticsSchema } from "../../../lib/schemas";
 import { parseInput, readJson } from "../../../lib/validation";
+import {
+  analyticsLimiter,
+  clientIp,
+  tooManyRequests,
+} from "../../../lib/rate-limit";
 
 function mexicoDate() {
   return new Intl.DateTimeFormat("en-CA", {
@@ -44,6 +49,12 @@ export async function GET() {
 
 export async function POST(request: Request) {
   try {
+    const limit = await analyticsLimiter().limit(clientIp(request.headers));
+
+    if (!limit.ok) {
+      return tooManyRequests(limit.retryAfter);
+    }
+
     const parsed = parseInput(analyticsSchema, await readJson(request));
 
     if (!parsed.ok) {

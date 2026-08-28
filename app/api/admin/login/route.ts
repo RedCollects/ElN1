@@ -5,9 +5,20 @@ import {
 } from "../../../../lib/admin-auth";
 import { adminLoginSchema } from "../../../../lib/schemas";
 import { parseInput, readJson } from "../../../../lib/validation";
+import {
+  adminLoginLimiter,
+  clientIp,
+  tooManyRequests,
+} from "../../../../lib/rate-limit";
 
 export async function POST(request: Request) {
   try {
+    const limit = await adminLoginLimiter().limit(clientIp(request.headers));
+
+    if (!limit.ok) {
+      return tooManyRequests(limit.retryAfter);
+    }
+
     const parsed = parseInput(adminLoginSchema, await readJson(request));
 
     if (!parsed.ok || !isValidAdminPassword(parsed.data.password)) {

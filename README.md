@@ -30,6 +30,18 @@ npx supabase status # muestra la URL y las claves locales para .env.local
 - `MERCADOPAGO_WEBHOOK_SECRET`: secreto de firma del webhook de Mercado Pago.
 - `NEXT_PUBLIC_APP_URL`: URL pública de la aplicación; en producción debe ser HTTPS.
 - `ADMIN_PASSWORD`: contraseña de administración de al menos 12 caracteres.
+- `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN`: Redis de Upstash para los límites de peticiones (`lib/rate-limit.ts`). Sin ellas el límite vive en memoria, que en Vercel no se comparte entre instancias: obligatorias en producción.
+
+## Límites de peticiones
+
+| Endpoint | Límite | Por | Si Upstash falla |
+|---|---|---|---|
+| `POST /api/admin/login` | 5 / 15 min | IP | bloquea |
+| `POST /api/checkout` | 10 / 10 min | usuario | deja pasar |
+| `POST /api/analytics` | 60 / min | IP | deja pasar |
+| registro e ingreso | 10 / 15 min | IP | deja pasar |
+
+Al superarlo la API responde `429` con `Retry-After`; los formularios muestran el mensaje.
 
 ## Ranking y precios
 
@@ -72,6 +84,7 @@ Al volver de Mercado Pago, la portada muestra un aviso según `?payment=success|
 - Configurar el webhook con la URL HTTPS de producción.
 - Proteger `/admin` y `/api/admin` con autenticación y autorización.
 - Configurar `ADMIN_PASSWORD` antes de abrir el panel.
+- Crear la base de Upstash Redis y configurar `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`.
 - Configurar políticas RLS y probar pagos aprobados, rechazados, pendientes y repetidos.
 - Sustituir el token de Mercado Pago si alguna vez fue compartido o expuesto.
 

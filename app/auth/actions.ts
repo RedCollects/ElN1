@@ -1,6 +1,8 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { authLimiter, clientIp } from "../../lib/rate-limit";
 import { createAuthSupabaseClient } from "../../lib/supabase-auth";
 import { signInSchema, signUpSchema } from "../../lib/schemas";
 import { formDataToObject, parseInput } from "../../lib/validation";
@@ -34,10 +36,24 @@ function describeAuthError(message: string): string {
   return "No se pudo completar la operación. Inténtalo de nuevo.";
 }
 
+/** Límite por IP compartido entre registro e ingreso; `null` si puede seguir. */
+async function authRateLimited(): Promise<AuthState | null> {
+  const limit = await authLimiter().limit(clientIp(await headers()));
+
+  return limit.ok
+    ? null
+    : {
+        error: `Demasiados intentos. Espera ${limit.retryAfter} segundos e inténtalo de nuevo.`,
+      };
+}
+
 export async function signUp(
   _previous: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
+  const limited = await authRateLimited();
+  if (limited) return limited;
+
   const parsed = parseInput(signUpSchema, formDataToObject(formData));
 
   if (!parsed.ok) {
@@ -77,6 +93,9 @@ export async function signIn(
   _previous: AuthState,
   formData: FormData,
 ): Promise<AuthState> {
+  const limited = await authRateLimited();
+  if (limited) return limited;
+
   const parsed = parseInput(signInSchema, formDataToObject(formData));
 
   if (!parsed.ok) {

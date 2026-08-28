@@ -5,6 +5,7 @@ import { getCurrentUser } from "../../../lib/supabase-auth";
 import { minimumOfferFor } from "../../../lib/prices";
 import { checkoutSchema } from "../../../lib/schemas";
 import { parseInput, readJson } from "../../../lib/validation";
+import { checkoutLimiter, tooManyRequests } from "../../../lib/rate-limit";
 import { missingForPublish } from "../../../lib/business";
 import {
   RESERVATION_MINUTES,
@@ -29,6 +30,12 @@ export async function POST(request: Request) {
         { error: "Inicia sesión para ofertar.", code: "auth" },
         { status: 401 },
       );
+    }
+
+    const limit = await checkoutLimiter().limit(user.id);
+
+    if (!limit.ok) {
+      return tooManyRequests(limit.retryAfter);
     }
 
     const parsed = parseInput(checkoutSchema, await readJson(request));
