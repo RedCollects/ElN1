@@ -13,6 +13,7 @@ import {
   type ImageKind,
 } from "@/lib/image-specs";
 import type { TablesUpdate } from "@/lib/database.types";
+import { log } from "@/lib/log";
 
 export type ImageState = {
   error?: string;
@@ -93,7 +94,7 @@ export async function uploadImage(
   try {
     processed = await processImage(kind, Buffer.from(await file.arrayBuffer()));
   } catch (error) {
-    console.error("Error al procesar imagen:", error);
+    log.error("image.process_failed", { kind, businessId: business.id }, error);
     return { error: "No pudimos procesar la imagen. Prueba con otro archivo." };
   }
 
@@ -107,7 +108,11 @@ export async function uploadImage(
     });
 
   if (uploadError) {
-    console.error("Error al subir imagen:", uploadError);
+    log.error(
+      "image.upload_failed",
+      { kind, businessId: business.id, path },
+      uploadError,
+    );
     return { error: "No se pudo subir la imagen. Inténtalo de nuevo." };
   }
 
@@ -127,7 +132,11 @@ export async function uploadImage(
 
   if (updateError) {
     await supabase.storage.from(MEDIA_BUCKET).remove([path]);
-    console.error("Error al guardar la URL de la imagen:", updateError);
+    log.error(
+      "image.save_failed",
+      { kind, businessId: business.id, path },
+      updateError,
+    );
     return { error: "No se pudo guardar la imagen. Inténtalo de nuevo." };
   }
 
@@ -165,7 +174,7 @@ export async function removeImage(kind: ImageKind): Promise<ImageState> {
     .eq("owner_id", user.id);
 
   if (error) {
-    console.error("Error al quitar imagen:", error);
+    log.error("image.remove_failed", { kind, businessId: business.id }, error);
     return { error: "No se pudo quitar la imagen." };
   }
 

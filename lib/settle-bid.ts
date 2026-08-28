@@ -3,6 +3,7 @@ import "server-only";
 import { MercadoPagoConfig, Payment, PaymentRefund } from "mercadopago";
 import { createServerSupabaseClient } from "./supabase-server";
 import { autoRefundOutbid } from "./payments";
+import { log } from "./log";
 
 type SettleResult =
   | { settled: true; bidId: string; alreadySettled?: true; result?: unknown }
@@ -44,7 +45,7 @@ export async function verifyAndSettlePayment(
   const bidId = String(payment.external_reference ?? "").trim();
 
   if (!bidId) {
-    console.warn(`Pago ${paymentId} sin oferta asociada; se ignora.`);
+    log.warn("webhook.no_bid", { paymentId });
     return { settled: false, rejected: "sin_oferta" };
   }
 
@@ -64,9 +65,7 @@ export async function verifyAndSettlePayment(
   }
 
   if (!bid) {
-    console.warn(
-      `Pago ${paymentId} referencia la oferta ${bidId}, que no existe.`,
-    );
+    log.warn("webhook.bid_not_found", { paymentId, bidId });
     return { settled: false, rejected: "oferta_inexistente" };
   }
 
@@ -88,9 +87,14 @@ export async function verifyAndSettlePayment(
 
   if (!amountMatches || !currencyMatches) {
     const reason = !amountMatches ? "importe_incorrecto" : "moneda_incorrecta";
-    console.error(
-      `Pago ${paymentId} rechazado (${reason}): esperado ${bid.amount} MXN, recibido ${payment.transaction_amount} ${payment.currency_id}.`,
-    );
+    log.error("webhook.payment_rejected", {
+      paymentId,
+      bidId,
+      reason,
+      expected: bid.amount,
+      received: payment.transaction_amount,
+      currency: payment.currency_id,
+    });
 
     const { error: rejectError } = await supabase
       .from("bids")
@@ -125,9 +129,13 @@ export async function verifyAndSettlePayment(
   }
 
   // La oferta llegó tarde: alguien pagó más antes de que se confirmara.
-  console.warn(
-    `Pago ${paymentId} no asignado (${result.reason}): pagó ${result.paid}, se requerían ${result.required}.`,
-  );
+  log.warn("webhook.outbid", {
+    paymentId,
+    bidId,
+    reason: result.reason,
+    paid: result.paid,
+    required: result.required,
+  });
 
   if (!autoRefundOutbid()) {
     return {
@@ -147,8 +155,9 @@ export async function verifyAndSettlePayment(
 
   if (refundError) {
     // El reembolso ya se emitió; queda en el log aunque falle el registro.
-    console.error(
-      `Reembolso ${refund.id} emitido pero no registrado en la oferta ${bidId}:`,
+    log.error(
+      "webhook.refund_unrecorded",
+      { paymentId, bidId, refundId: refund.id },
       refundError,
     );
   }

@@ -3,6 +3,7 @@ import "server-only";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import { NextResponse } from "next/server";
+import { log } from "./log";
 
 export type LimitResult = { ok: true } | { ok: false; retryAfter: number };
 
@@ -80,8 +81,9 @@ export class UpstashLimiter implements Limiter {
             ),
           };
     } catch (error) {
-      console.error(
-        `Rate limit "${this.name}" no disponible (${this.onError}):`,
+      log.error(
+        "ratelimit.unavailable",
+        { name: this.name, onError: this.onError },
         error,
       );
       return this.onError === "open"
@@ -124,9 +126,9 @@ export function createLimiter(
     );
   } else {
     if (!warnedMemory && process.env.NODE_ENV === "production") {
-      console.warn(
-        "Rate limit en memoria: define UPSTASH_REDIS_REST_URL y UPSTASH_REDIS_REST_TOKEN en producción.",
-      );
+      log.warn("ratelimit.memory_fallback", {
+        hint: "define UPSTASH_REDIS_REST_URL y UPSTASH_REDIS_REST_TOKEN",
+      });
       warnedMemory = true;
     }
     limiter = new MemoryLimiter(max, windowSeconds * 1000);

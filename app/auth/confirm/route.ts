@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createAuthSupabaseClient } from "@/lib/supabase-auth";
+import { log } from "@/lib/log";
 
 /**
  * Destino de los enlaces de confirmación de correo y recuperación de
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL(destination, request.url));
     }
 
-    console.warn("Enlace de confirmación rechazado:", error.message);
+    log.warn("auth.confirm_rejected", { type, reason: error.message });
     login.searchParams.set("error", "confirmacion");
     return NextResponse.redirect(login);
   }

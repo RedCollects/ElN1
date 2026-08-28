@@ -6,7 +6,24 @@ const supabaseHost = supabaseUrl ? new URL(supabaseUrl).hostname : undefined;
 const isLocalSupabase =
   supabaseHost === "127.0.0.1" || supabaseHost === "localhost";
 
+/**
+ * Cabeceras de seguridad básicas. Una CSP completa queda para más adelante:
+ * Mercado Pago y next/image necesitan orígenes afinados.
+ */
+const securityHeaders = [
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=(), payment=()",
+  },
+];
+
 const nextConfig: NextConfig = {
+  async headers() {
+    return [{ source: "/(.*)", headers: securityHeaders }];
+  },
   images: {
     // Solo en desarrollo con Supabase local: next/image bloquea IPs privadas.
     dangerouslyAllowLocalIP:
@@ -16,7 +33,9 @@ const nextConfig: NextConfig = {
       ...(supabaseUrl
         ? [
             {
-              protocol: supabaseUrl.startsWith("https") ? ("https" as const) : ("http" as const),
+              protocol: supabaseUrl.startsWith("https")
+                ? ("https" as const)
+                : ("http" as const),
               hostname: supabaseHost!,
               pathname: "/storage/v1/object/public/**",
             },

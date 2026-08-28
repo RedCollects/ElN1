@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyAndSettlePayment } from "@/lib/settle-bid";
 import { isMercadoPagoWebhookAuthorized } from "@/lib/mercadopago-signature";
+import { log } from "@/lib/log";
 
 function hasValidSignature(request: Request, paymentId: string) {
   return isMercadoPagoWebhookAuthorized({
@@ -43,7 +44,7 @@ export async function POST(request: Request) {
     const result = await verifyAndSettlePayment(paymentId);
     return NextResponse.json({ received: true, ...result });
   } catch (error) {
-    console.error("MERCADO PAGO WEBHOOK ERROR:", error);
+    log.error("webhook.failed", {}, error);
     return NextResponse.json(
       { error: "No se pudo procesar la notificación." },
       { status: 500 },

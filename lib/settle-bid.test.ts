@@ -356,8 +356,9 @@ describe("verifyAndSettlePayment", () => {
       refunded: true,
     });
     expect(console.error).toHaveBeenCalledWith(
-      expect.stringContaining("Reembolso 556 emitido pero no registrado"),
-      expect.anything(),
+      expect.stringContaining("webhook.refund_unrecorded"),
+      expect.objectContaining({ paymentId: PAYMENT_ID, refundId: 556 }),
+      { message: "BD caída" },
     );
   });
 });

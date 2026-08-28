@@ -7,6 +7,7 @@ import { setBusinessActive } from "@/lib/admin";
 import { adminProfileSchema, adminToggleSchema } from "@/lib/schemas";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { formDataToObject, parseInput } from "@/lib/validation";
+import { log } from "@/lib/log";
 
 /** Vuelve al panel con el aviso correspondiente. */
 function finish(error?: string): never {
@@ -41,7 +42,7 @@ export async function updateBusinessProfile(formData: FormData) {
     .eq("id", id);
 
   if (error) {
-    console.error("Error al guardar el perfil desde /admin:", error);
+    log.error("admin.profile_update_failed", { businessId: id }, error);
     finish("No se pudo guardar.");
   }
 

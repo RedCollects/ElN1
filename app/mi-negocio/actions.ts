@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/supabase-auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { profileSchema } from "@/lib/schemas";
 import { formDataToObject, parseInput } from "@/lib/validation";
+import { log } from "@/lib/log";
 
 export type ProfileState = {
   error?: string;
@@ -36,7 +37,7 @@ export async function updateProfile(
     .maybeSingle();
 
   if (error) {
-    console.error("Error al guardar el perfil:", error);
+    log.error("profile.update_failed", { userId: user.id }, error);
     return { error: "No se pudo guardar. Inténtalo de nuevo." };
   }
 

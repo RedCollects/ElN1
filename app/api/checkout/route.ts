@@ -12,6 +12,7 @@ import {
   allowCashPayments,
   mercadoPagoDate,
 } from "@/lib/payments";
+import { log } from "@/lib/log";
 
 /**
  * Inicia una oferta: valida al dueño y su perfil, calcula el importe contra
@@ -225,7 +226,11 @@ export async function POST(request: Request) {
         },
       });
     } catch (error) {
-      console.error("ERROR MERCADO PAGO (preferencia):", error);
+      log.error(
+        "checkout.preference_failed",
+        { bidId: bid.id, position },
+        error,
+      );
       await supabase
         .from("bids")
         .update({ status: "expired", failure_reason: "preferencia_fallida" })
@@ -250,7 +255,7 @@ export async function POST(request: Request) {
       init_point: result.init_point,
     });
   } catch (error) {
-    console.error("ERROR CHECKOUT:", error);
+    log.error("checkout.failed", {}, error);
 
     return NextResponse.json(
       { error: "No se pudo iniciar el pago." },
