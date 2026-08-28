@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "./database.types";
 
 /**
  * Cliente de Supabase con la clave pública (solo lectura vía RLS).
@@ -16,7 +17,7 @@ export function createPublicSupabaseClient() {
     throw new Error("Faltan las variables públicas de Supabase.");
   }
 
-  return createClient(url, key, {
+  return createClient<Database>(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }

@@ -1,5 +1,5 @@
 import { createPublicSupabaseClient } from "../../../lib/supabase-public";
-import { contactLinks, type Business } from "../../../lib/business";
+import { contactLinks } from "../../../lib/business";
 import { SmartImage } from "../../components/SmartImage";
 import {
   Avatar,
@@ -44,7 +44,7 @@ export default async function BusinessPage({
     );
   }
 
-  const item = business as Business;
+  const item = business;
   const subtitle = [item.category, item.city].filter(Boolean).join(" · ");
   const links = contactLinks(item);
 
@@ -58,7 +58,7 @@ export default async function BusinessPage({
 
       <Container width="content" className="py-12">
         <div className="overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm">
-          <div className="relative bg-brand px-6 py-10 text-center">
+          <div className="bg-brand relative px-6 py-10 text-center">
             {item.cover_url && (
               <>
                 <SmartImage
@@ -83,17 +83,25 @@ export default async function BusinessPage({
               />
 
               <Eyebrow tone="light" className="mt-5">
-                {item.position ? `Posición #${item.position}` : "Fuera del ranking"}
+                {item.position
+                  ? `Posición #${item.position}`
+                  : "Fuera del ranking"}
               </Eyebrow>
 
-              <h1 className="mt-2 text-4xl font-black text-white sm:text-5xl">{item.name}</h1>
+              <h1 className="mt-2 text-4xl font-black text-white sm:text-5xl">
+                {item.name}
+              </h1>
 
               {subtitle && (
-                <p className="mt-2 text-lg font-medium text-white/90">{subtitle}</p>
+                <p className="mt-2 text-lg font-medium text-white/90">
+                  {subtitle}
+                </p>
               )}
 
               {item.tagline && (
-                <p className="mx-auto mt-4 max-w-xl text-base text-white/90">{item.tagline}</p>
+                <p className="mx-auto mt-4 max-w-xl text-base text-white/90">
+                  {item.tagline}
+                </p>
               )}
             </div>
           </div>
@@ -101,15 +109,17 @@ export default async function BusinessPage({
           <div className="p-6 sm:p-8">
             {item.description && (
               <div className="mb-8">
-                <h2 className="text-lg font-bold text-neutral-950">Sobre el negocio</h2>
-                <p className="mt-2 whitespace-pre-line leading-7 text-neutral-500">
+                <h2 className="text-lg font-bold text-neutral-950">
+                  Sobre el negocio
+                </h2>
+                <p className="mt-2 leading-7 whitespace-pre-line text-neutral-500">
                   {item.description}
                 </p>
               </div>
             )}
 
             {item.position && (
-              <div className="rounded-2xl bg-brand-50 p-6">
+              <div className="bg-brand-50 rounded-2xl p-6">
                 <Muted className="font-medium">Oferta actual</Muted>
                 <p className="mt-1">
                   <Price value={item.current_price} size="xl" />
@@ -138,7 +148,9 @@ export default async function BusinessPage({
               </div>
             )}
 
-            {item.hours && <Muted className="mt-6 text-center">🕒 {item.hours}</Muted>}
+            {item.hours && (
+              <Muted className="mt-6 text-center">🕒 {item.hours}</Muted>
+            )}
 
             <div className="mt-8">
               <Button

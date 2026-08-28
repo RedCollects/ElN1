@@ -1,4 +1,5 @@
 import { BUSINESS_CATEGORIES } from "./categories";
+import type { Tables } from "./database.types";
 
 /** Lista única de categorías (compartida con el admin y el filtro del ranking). */
 export const CATEGORIES: readonly string[] = BUSINESS_CATEGORIES;
@@ -7,32 +8,8 @@ export type Category = string;
 
 export type BusinessStatus = "draft" | "published";
 
-export type Business = {
-  id: string;
-  owner_id: string | null;
-  name: string;
-  slug: string | null;
-  category: string | null;
-  city: string | null;
-  tagline: string | null;
-  description: string | null;
-  phone: string | null;
-  whatsapp: string | null;
-  email_public: string | null;
-  website: string | null;
-  instagram: string | null;
-  facebook: string | null;
-  tiktok: string | null;
-  logo_url: string | null;
-  cover_url: string | null;
-  maps_url: string | null;
-  hours: string | null;
-  position: number | null;
-  current_price: number | null;
-  active: boolean;
-  status: BusinessStatus;
-  updated_at?: string;
-};
+/** Fila de `public.businesses` tal como la devuelve Supabase (tipos generados). */
+export type Business = Tables<"businesses">;
 
 /**
  * Hasta qué posición se muestra el anuncio grande (hover / toque).
@@ -41,7 +18,11 @@ export type Business = {
 export const BIG_AD_MAX_POSITION = 10;
 
 export function hasBigAd(position: number | null | undefined): boolean {
-  return typeof position === "number" && position >= 1 && position <= BIG_AD_MAX_POSITION;
+  return (
+    typeof position === "number" &&
+    position >= 1 &&
+    position <= BIG_AD_MAX_POSITION
+  );
 }
 
 export type ContactLink = {
@@ -56,28 +37,68 @@ export function contactLinks(business: Partial<Business>): ContactLink[] {
   const links: ContactLink[] = [];
 
   if (business.whatsapp) {
-    links.push({ label: "WhatsApp", emoji: "💬", href: whatsappUrl(business.whatsapp), external: true });
+    links.push({
+      label: "WhatsApp",
+      emoji: "💬",
+      href: whatsappUrl(business.whatsapp),
+      external: true,
+    });
   }
   if (business.phone) {
-    links.push({ label: "Llamar", emoji: "📞", href: `tel:${business.phone}`, external: false });
+    links.push({
+      label: "Llamar",
+      emoji: "📞",
+      href: `tel:${business.phone}`,
+      external: false,
+    });
   }
   if (business.email_public) {
-    links.push({ label: "Email", emoji: "✉️", href: `mailto:${business.email_public}`, external: false });
+    links.push({
+      label: "Email",
+      emoji: "✉️",
+      href: `mailto:${business.email_public}`,
+      external: false,
+    });
   }
   if (business.website) {
-    links.push({ label: "Sitio web", emoji: "🌐", href: business.website, external: true });
+    links.push({
+      label: "Sitio web",
+      emoji: "🌐",
+      href: business.website,
+      external: true,
+    });
   }
   if (business.instagram) {
-    links.push({ label: "Instagram", emoji: "📸", href: socialUrl("instagram", business.instagram), external: true });
+    links.push({
+      label: "Instagram",
+      emoji: "📸",
+      href: socialUrl("instagram", business.instagram),
+      external: true,
+    });
   }
   if (business.facebook) {
-    links.push({ label: "Facebook", emoji: "👍", href: socialUrl("facebook", business.facebook), external: true });
+    links.push({
+      label: "Facebook",
+      emoji: "👍",
+      href: socialUrl("facebook", business.facebook),
+      external: true,
+    });
   }
   if (business.tiktok) {
-    links.push({ label: "TikTok", emoji: "🎵", href: socialUrl("tiktok", business.tiktok), external: true });
+    links.push({
+      label: "TikTok",
+      emoji: "🎵",
+      href: socialUrl("tiktok", business.tiktok),
+      external: true,
+    });
   }
   if (business.maps_url) {
-    links.push({ label: "Cómo llegar", emoji: "📍", href: business.maps_url, external: true });
+    links.push({
+      label: "Cómo llegar",
+      emoji: "📍",
+      href: business.maps_url,
+      external: true,
+    });
   }
 
   return links;
@@ -123,9 +144,9 @@ export const FIELD_LIMITS: Record<EditableField, number> = {
 export function hasContactChannel(business: Partial<Business>): boolean {
   return Boolean(
     business.whatsapp ||
-      business.phone ||
-      business.email_public ||
-      business.website
+    business.phone ||
+    business.email_public ||
+    business.website,
   );
 }
 
@@ -138,7 +159,9 @@ export function missingForPublish(business: Partial<Business>): string[] {
   if (!business.city?.trim()) missing.push("la ciudad");
   if (!business.logo_url) missing.push("el logo");
   if (!hasContactChannel(business)) {
-    missing.push("al menos un canal de contacto (WhatsApp, teléfono, email o sitio web)");
+    missing.push(
+      "al menos un canal de contacto (WhatsApp, teléfono, email o sitio web)",
+    );
   }
 
   return missing;

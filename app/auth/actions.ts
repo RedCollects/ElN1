@@ -2,13 +2,13 @@
 
 import { redirect } from "next/navigation";
 import { createAuthSupabaseClient } from "../../lib/supabase-auth";
+import { signInSchema, signUpSchema } from "../../lib/schemas";
+import { formDataToObject, parseInput } from "../../lib/validation";
 
 export type AuthState = {
   error?: string;
   notice?: string;
 };
-
-const MIN_PASSWORD_LENGTH = 8;
 
 function safeNextPath(value: FormDataEntryValue | null): string {
   const path = String(value ?? "");
@@ -36,21 +36,15 @@ function describeAuthError(message: string): string {
 
 export async function signUp(
   _previous: AuthState,
-  formData: FormData
+  formData: FormData,
 ): Promise<AuthState> {
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const password = String(formData.get("password") ?? "");
-  const businessName = String(formData.get("businessName") ?? "").trim();
+  const parsed = parseInput(signUpSchema, formDataToObject(formData));
 
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return { error: "Escribe un correo válido." };
+  if (!parsed.ok) {
+    return { error: parsed.error };
   }
-  if (password.length < MIN_PASSWORD_LENGTH) {
-    return { error: `La contraseña debe tener al menos ${MIN_PASSWORD_LENGTH} caracteres.` };
-  }
-  if (businessName.length < 2 || businessName.length > 60) {
-    return { error: "El nombre del negocio debe tener entre 2 y 60 caracteres." };
-  }
+
+  const { email, password, businessName } = parsed.data;
 
   const supabase = await createAuthSupabaseClient();
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
@@ -81,14 +75,15 @@ export async function signUp(
 
 export async function signIn(
   _previous: AuthState,
-  formData: FormData
+  formData: FormData,
 ): Promise<AuthState> {
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const password = String(formData.get("password") ?? "");
+  const parsed = parseInput(signInSchema, formDataToObject(formData));
 
-  if (!email || !password) {
-    return { error: "Escribe tu correo y tu contraseña." };
+  if (!parsed.ok) {
+    return { error: parsed.error };
   }
+
+  const { email, password } = parsed.data;
 
   const supabase = await createAuthSupabaseClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });

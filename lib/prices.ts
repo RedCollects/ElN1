@@ -26,8 +26,9 @@ export const INITIAL_PRICES: Record<number, number> = Object.fromEntries(
   ]),
 );
 
-export function isValidPosition(position: number): boolean {
+export function isValidPosition(position: number | null | undefined): boolean {
   return (
+    typeof position === "number" &&
     Number.isInteger(position) &&
     position >= 1 &&
     position <= MAX_RANKING_POSITION

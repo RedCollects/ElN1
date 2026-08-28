@@ -92,5 +92,7 @@ describe("isValidPosition", () => {
     expect(isValidPosition(MAX_RANKING_POSITION + 1)).toBe(false);
     expect(isValidPosition(2.5)).toBe(false);
     expect(isValidPosition(Number.NaN)).toBe(false);
+    expect(isValidPosition(null)).toBe(false);
+    expect(isValidPosition(undefined)).toBe(false);
   });
 });

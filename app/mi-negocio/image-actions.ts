@@ -12,6 +12,7 @@ import {
   storagePathFromUrl,
   type ImageKind,
 } from "../../lib/image-specs";
+import type { TablesUpdate } from "../../lib/database.types";
 
 export type ImageState = {
   error?: string;
@@ -33,7 +34,7 @@ async function loadOwnBusiness(userId: string) {
 
 async function removeStoredObject(
   supabase: ReturnType<typeof createServerSupabaseClient>,
-  url: string | null
+  url: string | null,
 ) {
   const path = url ? storagePathFromUrl(url) : null;
 
@@ -51,7 +52,7 @@ function revalidateBusiness(businessId: string) {
 export async function uploadImage(
   kind: ImageKind,
   _previous: ImageState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ImageState> {
   const spec = IMAGE_SPECS[kind];
 
@@ -76,7 +77,9 @@ export async function uploadImage(
   }
 
   if (file.size > spec.maxBytes) {
-    return { error: `La imagen supera los ${spec.maxBytes / 1024 / 1024} MB permitidos.` };
+    return {
+      error: `La imagen supera los ${spec.maxBytes / 1024 / 1024} MB permitidos.`,
+    };
   }
 
   const { supabase, business } = await loadOwnBusiness(user.id);
@@ -115,7 +118,10 @@ export async function uploadImage(
   const column = imageColumn(kind);
   const { error: updateError } = await supabase
     .from("businesses")
-    .update({ [column]: publicUrl })
+    .update({ [column]: publicUrl } as Pick<
+      TablesUpdate<"businesses">,
+      typeof column
+    >)
     .eq("id", business.id)
     .eq("owner_id", user.id);
 
@@ -151,7 +157,10 @@ export async function removeImage(kind: ImageKind): Promise<ImageState> {
   const column = imageColumn(kind);
   const { error } = await supabase
     .from("businesses")
-    .update({ [column]: null })
+    .update({ [column]: null } as Pick<
+      TablesUpdate<"businesses">,
+      typeof column
+    >)
     .eq("id", business.id)
     .eq("owner_id", user.id);
 

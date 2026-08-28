@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "../../lib/supabase-auth";
 import { createServerSupabaseClient } from "../../lib/supabase-server";
-import { missingForPublish, type Business } from "../../lib/business";
+import { missingForPublish } from "../../lib/business";
 import { formatPrice } from "../../lib/format";
 import { signOut } from "../auth/actions";
 import { BusinessEditor } from "./business-editor";
@@ -51,15 +51,17 @@ export default async function MyBusinessPage() {
     return (
       <PageShell tone="muted" centered>
         <EmptyState title="No encontramos tu negocio">
-          Tu cuenta existe pero no tiene un negocio ligado. Escríbenos para resolverlo.
+          Tu cuenta existe pero no tiene un negocio ligado. Escríbenos para
+          resolverlo.
         </EmptyState>
       </PageShell>
     );
   }
 
-  const business = data as Business;
+  const business = data;
   const missing = missingForPublish(business);
-  const isPublished = business.status === "published" && business.position !== null;
+  const isPublished =
+    business.status === "published" && business.position !== null;
 
   return (
     <PageShell tone="muted">
@@ -85,11 +87,16 @@ export default async function MyBusinessPage() {
             className="mt-6"
           >
             <p>
-              Oferta actual: {formatPrice(business.current_price)}. Los cambios que hagas en
-              tu perfil se ven al instante.
+              Oferta actual: {formatPrice(business.current_price)}. Los cambios
+              que hagas en tu perfil se ven al instante.
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
-              <Button href={`/business/${business.id}`} variant="outline" size="sm" shape="rounded">
+              <Button
+                href={`/business/${business.id}`}
+                variant="outline"
+                size="sm"
+                shape="rounded"
+              >
                 Ver mi página pública
               </Button>
               <Button href="/" variant="accent" size="sm" shape="rounded">
@@ -98,7 +105,11 @@ export default async function MyBusinessPage() {
             </div>
           </Alert>
         ) : missing.length > 0 ? (
-          <Alert tone="warning" title="Tu negocio aún no está publicado" className="mt-6">
+          <Alert
+            tone="warning"
+            title="Tu negocio aún no está publicado"
+            className="mt-6"
+          >
             <p>Para poder publicarlo falta:</p>
             <ul className="mt-2 list-disc space-y-1 pl-5">
               {missing.map((item) => (

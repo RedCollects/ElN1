@@ -2,6 +2,7 @@ import "server-only";
 
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import type { Database } from "./database.types";
 
 /**
  * Cliente de Supabase ligado a la sesión del visitante (cookies).
@@ -19,7 +20,7 @@ export async function createAuthSupabaseClient() {
     throw new Error("Faltan las variables públicas de Supabase.");
   }
 
-  return createServerClient(url, key, {
+  return createServerClient<Database>(url, key, {
     cookies: {
       getAll() {
         return cookieStore.getAll();
