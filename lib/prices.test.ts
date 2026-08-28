@@ -50,15 +50,21 @@ describe("getMinimumOffer", () => {
     expect(getMinimumOffer(1, 500)).toBe(550);
   });
 
-  // BUG CONOCIDO (se corrige en el PR "calidad/fix-redondeo-oferta"):
-  // `Math.ceil(100 * 1.1)` da 111 porque 100 * 1.1 = 110.00000000000001 en
-  // coma flotante. Postgres (`settle_bid`, numeric exacto) calcula 110, así
-  // que el cliente paga un peso de más. Cuando se corrija, cambiar `it.fails`
-  // por `it`.
-  it.fails("cobra exactamente el 110 % cuando el resultado es entero", () => {
+  // Regresión: `Math.ceil(100 * 1.1)` daba 111 por coma flotante mientras
+  // `settle_bid` (numeric exacto) calcula 110.
+  it("cobra exactamente el 110 % cuando el resultado es entero", () => {
     expect(getMinimumOffer(1, 100)).toBe(110);
     expect(getMinimumOffer(1, 50)).toBe(55);
     expect(getMinimumOffer(1, 200)).toBe(220);
+    expect(getMinimumOffer(1, 1000)).toBe(1100);
+  });
+
+  it("coincide con ceil(precio * 1.1) exacto para todos los precios enteros hasta 100 000", () => {
+    for (let price = 1; price <= 100_000; price++) {
+      // 11 * precio / 10 en enteros: sin error de coma flotante.
+      const exact = Math.ceil((price * 11) / 10);
+      expect(getMinimumOffer(1, price)).toBe(exact);
+    }
   });
 
   it("acepta el precio como texto (numeric de Postgres)", () => {
