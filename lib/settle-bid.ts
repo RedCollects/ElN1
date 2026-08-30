@@ -3,6 +3,7 @@ import "server-only";
 import { MercadoPagoConfig, Payment, PaymentRefund } from "mercadopago";
 import { createServerSupabaseClient } from "./supabase-server";
 import { autoRefundOutbid } from "./payments";
+import { withTax } from "./legal";
 import { log } from "./log";
 
 type SettleResult =
@@ -81,8 +82,9 @@ export async function verifyAndSettlePayment(
     };
   }
 
+  // El comprador paga en Mercado Pago el total con IVA de su oferta neta.
   const amountMatches =
-    Number(payment.transaction_amount) === Number(bid.amount);
+    Number(payment.transaction_amount) === withTax(Number(bid.amount));
   const currencyMatches = payment.currency_id === "MXN";
 
   if (!amountMatches || !currencyMatches) {

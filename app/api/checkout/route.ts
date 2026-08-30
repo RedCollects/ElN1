@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { MercadoPagoConfig, Preference } from "mercadopago";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { getCurrentUser } from "@/lib/supabase-auth";
-import { minimumOfferFor } from "@/lib/prices";
+import { MAX_OFFER, minimumOfferFor, normalizeOffer } from "@/lib/prices";
 import { checkoutSchema } from "@/lib/schemas";
 import { parseInput, readJson } from "@/lib/validation";
 import { checkoutLimiter, tooManyRequests } from "@/lib/rate-limit";
@@ -15,13 +15,26 @@ import {
 import { log } from "@/lib/log";
 import { TERMS_VERSION, withTax } from "@/lib/legal";
 
+type PositionState = {
+  holder_id: string | null;
+  current_price: number | string | null;
+  floor_price: number | string | null;
+  reserved_amount: number | string | null;
+  reserved_until: string | null;
+  next_free_position: number | null;
+};
+
 /**
- * Inicia una oferta: valida al dueño y su perfil, calcula el importe contra
- * el estado real de la posición (precio publicado y reservas vigentes),
- * registra una reserva de RESERVATION_MINUTES y crea la preferencia de pago.
+ * Inicia una oferta: valida al dueño y su perfil, calcula el mínimo contra
+ * el estado real de la posición (máximo pagado desde ella hacia abajo y
+ * reservas vigentes), acepta un monto libre por encima del mínimo, registra
+ * una reserva de RESERVATION_MINUTES y crea la preferencia de pago (el total
+ * cobrado en Mercado Pago es la oferta neta más IVA).
  *
- * Si el cliente manda `expectedAmount` y ya no coincide, responde 409 con el
- * importe nuevo para que el modal lo muestre antes de cobrar.
+ * Solo se vende el siguiente lugar libre o superar a un ocupado. Si el
+ * ranking cambió desde que el cliente lo vio, responde 409 con el estado
+ * nuevo (`price_changed` o `ranking_changed`) para que el modal lo muestre
+ * antes de cobrar.
  */
 export async function POST(request: Request) {
   try {
@@ -46,7 +59,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
 
-    const { position, expectedAmount } = parsed.data;
+    const { position, amount: requestedAmount } = parsed.data;
 
     const supabase = createServerSupabaseClient();
     const { data: businessRow, error: businessError } = await supabase
@@ -109,6 +122,7 @@ export async function POST(request: Request) {
       "position_state",
       {
         p_position: position,
+        p_business_id: business.id,
       },
     );
 
@@ -119,35 +133,69 @@ export async function POST(request: Request) {
       );
     }
 
-    const state = (stateRows ?? [])[0] as
-      | {
-          holder_id: string | null;
-          current_price: number | string | null;
-          reserved_amount: number | string | null;
-          reserved_until: string | null;
-        }
-      | undefined;
+    const state = ((stateRows ?? [])[0] ?? {}) as Partial<PositionState>;
+    const holderId = state.holder_id ?? null;
+    const nextFree = state.next_free_position ?? null;
 
-    const holderPrice =
-      state?.current_price != null ? Number(state.current_price) : null;
-    const reservedAmount =
-      state?.reserved_amount != null ? Number(state.reserved_amount) : null;
-    const floor =
-      holderPrice === null && reservedAmount === null
-        ? null
-        : Math.max(holderPrice ?? 0, reservedAmount ?? 0);
-    const amount = minimumOfferFor(position, floor);
-
-    if (expectedAmount !== null && expectedAmount !== amount) {
+    // Lugar libre: solo se vende el siguiente al último ocupado.
+    if (holderId === null && position !== nextFree) {
       return NextResponse.json(
         {
-          error: `El precio de la posición #${position} cambió: ahora la oferta mínima es $${amount} MXN.`,
-          code: "price_changed",
-          amount,
-          reservedUntil: state?.reserved_until ?? null,
+          error:
+            nextFree === null
+              ? "El ranking está lleno: solo puedes entrar superando a un negocio."
+              : `Alguien acaba de entrar al ranking. El siguiente lugar libre ahora es el #${nextFree}.`,
+          code: "ranking_changed",
+          nextFree,
         },
         { status: 409 },
       );
+    }
+
+    const floorPrice =
+      state.floor_price != null ? Number(state.floor_price) : null;
+    const reservedAmount =
+      state.reserved_amount != null ? Number(state.reserved_amount) : null;
+    const floor =
+      floorPrice === null && reservedAmount === null
+        ? null
+        : Math.max(floorPrice ?? 0, reservedAmount ?? 0);
+    const minimum = minimumOfferFor(position, floor);
+
+    let amount = minimum;
+
+    if (requestedAmount !== null) {
+      const normalized = normalizeOffer(requestedAmount, minimum);
+
+      if (normalized === null) {
+        return NextResponse.json(
+          { error: "Escribe un monto válido en pesos." },
+          { status: 400 },
+        );
+      }
+
+      if (requestedAmount > MAX_OFFER) {
+        return NextResponse.json(
+          {
+            error: `El monto máximo por oferta es $${MAX_OFFER.toLocaleString("es-MX")} MXN.`,
+          },
+          { status: 400 },
+        );
+      }
+
+      if (requestedAmount < minimum) {
+        return NextResponse.json(
+          {
+            error: `El precio de la posición #${position} cambió: ahora la oferta mínima es $${minimum} MXN.`,
+            code: "price_changed",
+            amount: minimum,
+            reservedUntil: state.reserved_until ?? null,
+          },
+          { status: 409 },
+        );
+      }
+
+      amount = normalized;
     }
 
     const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
@@ -177,6 +225,7 @@ export async function POST(request: Request) {
         amount,
         terms_version: TERMS_VERSION,
         status: "pending",
+        entry: holderId === null,
         expires_at: expiresAt.toISOString(),
       })
       .select("id")

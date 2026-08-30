@@ -100,6 +100,7 @@ vi.mock("./supabase-server", () => ({
 }));
 
 import { verifyAndSettlePayment } from "./settle-bid";
+import { withTax } from "./legal";
 
 // --- Helpers ----------------------------------------------------------------
 
@@ -110,7 +111,7 @@ function approvedPayment(overrides: Record<string, unknown> = {}) {
   return {
     external_reference: BID_ID,
     status: "approved",
-    transaction_amount: 110,
+    transaction_amount: withTax(110),
     currency_id: "MXN",
     ...overrides,
   };
@@ -252,7 +253,7 @@ describe("verifyAndSettlePayment", () => {
   });
 
   it("acepta el importe aunque Postgres lo devuelva como texto", async () => {
-    paymentGet.mockResolvedValue(approvedPayment({ transaction_amount: 110 }));
+    paymentGet.mockResolvedValue(approvedPayment({ transaction_amount: withTax(110) }));
     fake.bid = pendingBid({ amount: "110" as unknown as number });
     fake.rpcResult = { success: true };
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { hasBigAd, type Business } from "@/lib/business";
-import { INITIAL_PRICES } from "@/lib/prices";
+import { BASE_PRICE } from "@/lib/prices";
 import type { Reservation } from "@/lib/payments";
 import { formatPrice } from "@/lib/format";
 import { Avatar, Button, Figure, LiveDot, Tag, cn } from "@/app/ui";
@@ -58,13 +58,13 @@ export function SlotCard({
 
         <div className="flex-1 px-[18px] py-5">
           <h3 className="text-xl leading-tight font-extrabold tracking-[-0.01em]">
-            Posición disponible
+            Siguiente lugar libre
           </h3>
           <p className="text-muted mt-2 text-[13px]">
-            Haz que tu negocio aparezca aquí.
+            Entra al ranking aquí o supera a quien quieras.
           </p>
           <p className="text-accent-press mt-[18px] text-[13px] font-bold tracking-[0.06em] uppercase">
-            Desde {formatPrice(minimumOffer ?? INITIAL_PRICES[position])}
+            Desde {formatPrice(minimumOffer ?? BASE_PRICE)} + IVA
           </p>
           {reservation && (
             <ReservationRow
@@ -82,7 +82,7 @@ export function SlotCard({
               className="h-full"
               onClick={() => onBid(position)}
             >
-              Ocupar posición
+              Entrar al ranking
             </Button>
           </div>
         )}

@@ -71,6 +71,12 @@ export const checkoutSchema = z.object({
     .positive("Importe inválido.")
     .nullish()
     .transform((value) => value ?? null),
+  /** Monto libre del usuario (neto, sin IVA); el servidor exige >= mínimo. */
+  amount: z.coerce
+    .number("Importe inválido.")
+    .positive("Importe inválido.")
+    .nullish()
+    .transform((value) => value ?? null),
 });
 
 // --- Admin ------------------------------------------------------------------

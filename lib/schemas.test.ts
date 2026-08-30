@@ -18,13 +18,13 @@ describe("checkoutSchema", () => {
   it("acepta una posición válida y normaliza expectedAmount ausente a null", () => {
     expect(parseInput(checkoutSchema, { position: 3 })).toEqual({
       ok: true,
-      data: { position: 3, expectedAmount: null },
+      data: { position: 3, expectedAmount: null, amount: null },
     });
     expect(
       parseInput(checkoutSchema, { position: "7", expectedAmount: "110" }),
     ).toEqual({
       ok: true,
-      data: { position: 7, expectedAmount: 110 },
+      data: { position: 7, expectedAmount: 110, amount: null },
     });
   });
 
