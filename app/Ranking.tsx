@@ -6,16 +6,18 @@ import { RANKING_SIZE, isValidPosition, minimumOfferFor } from "@/lib/prices";
 import type { Business } from "@/lib/business";
 import { RESERVATION_MINUTES, type Reservation } from "@/lib/payments";
 import { formatPrice } from "@/lib/format";
-import { RankingCard } from "./components/RankingCard";
+import { SlotCard } from "./components/SlotCard";
 import {
   Alert,
   Button,
   Container,
   Eyebrow,
+  Figure,
   Heading,
+  LiveDot,
   Modal,
   Muted,
-  Price,
+  cn,
 } from "@/app/ui";
 
 /** Lo que la portada sabe del visitante para decidir qué mostrar en el modal. */
@@ -190,38 +192,56 @@ export default function Ranking({
     ? `?next=${encodeURIComponent(`/?position=${selectedPosition}`)}`
     : "";
 
+  /* Qué muestra el diálogo según quién mira y qué posición eligió. */
+  const canBid =
+    viewer.loggedIn &&
+    viewer.business !== null &&
+    viewer.business.missing.length === 0 &&
+    (viewer.business.position === null ||
+      selectedPosition === null ||
+      selectedPosition <= viewer.business.position);
+
   return (
     <>
-      <Container width="content" className="pb-20">
-        <div className="mb-6">
-          <Eyebrow>Ranking actual</Eyebrow>
-          <Heading as="h2" className="mt-1">
-            Los que están arriba
+      <Container className="pb-20">
+        <div className="border-rule border-t-2 pt-8">
+          <LiveDot>Ranking en vivo</LiveDot>
+          <Heading as="h2" size="title" className="mt-3">
+            Las {RANKING_SIZE} posiciones
           </Heading>
-          <Muted className="mt-2">
-            Cada posición es un espacio disponible para competir. Pasa el cursor
-            o toca un negocio para ver su anuncio.
+          <Muted className="mt-2 max-w-[640px]">
+            Cada posición se mantiene mientras nadie pague más. Pasa el cursor o
+            toca un negocio para ver su anuncio.
           </Muted>
         </div>
 
-        <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
-          {["Todas", ...categoryOptions].map((category) => (
-            <button
-              key={category}
-              type="button"
-              onClick={() => setActiveCategory(category)}
-              className={
-                activeCategory === category
-                  ? "shrink-0 bg-neutral-950 px-4 py-2 text-sm font-bold text-white"
-                  : "hover:border-accent-300 shrink-0 border border-neutral-200 bg-white px-4 py-2 text-sm font-bold text-neutral-600 transition"
-              }
-            >
-              {category}
-            </button>
-          ))}
+        <div
+          role="group"
+          aria-label="Filtrar por categoría"
+          className="mt-6 flex gap-2 overflow-x-auto pb-2"
+        >
+          {["Todas", ...categoryOptions].map((category) => {
+            const active = activeCategory === category;
+            return (
+              <button
+                key={category}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setActiveCategory(category)}
+                className={cn(
+                  "border-rule shrink-0 border-2 px-4 py-2 text-[12px] font-bold tracking-[0.08em] uppercase transition-colors duration-[120ms]",
+                  active
+                    ? "bg-ink text-bg"
+                    : "text-ink hover:bg-surface bg-transparent",
+                )}
+              >
+                {category}
+              </button>
+            );
+          })}
         </div>
 
-        <div className="space-y-4">
+        <div className="mt-6 space-y-3">
           {positions.map((position) => {
             const business = businessAt(position);
 
@@ -233,7 +253,7 @@ export default function Ranking({
             }
 
             return (
-              <RankingCard
+              <SlotCard
                 key={position}
                 position={position}
                 business={business}
@@ -257,15 +277,36 @@ export default function Ranking({
           eyebrow={`Posición #${selectedPosition}`}
           title={
             ownsSelected
-              ? "Blinda tu posición"
+              ? "Blinda tu lugar"
               : selectedBusiness
-                ? "Superar posición"
+                ? `Supera a ${selectedBusiness.name}`
                 : "Ocupa esta posición"
+          }
+          actions={
+            canBid ? (
+              <>
+                <Button size="lg" onClick={reserveAndPay} disabled={loading}>
+                  {loading
+                    ? "Reservando…"
+                    : notice
+                      ? `Ofertar ${formatPrice(amount)}`
+                      : "Reservar y pagar"}
+                </Button>
+                <Button
+                  size="lg"
+                  variant="ghost"
+                  className="px-6"
+                  onClick={closeModal}
+                >
+                  Cancelar
+                </Button>
+              </>
+            ) : undefined
           }
         >
           {!viewer.loggedIn ? (
-            <div className="mt-6">
-              <p className="text-sm leading-6 text-neutral-600">
+            <div>
+              <p className="text-ink text-[15px] leading-relaxed">
                 Para ofertar necesitas una cuenta de negocio. Es gratis: te
                 registras, completas tu perfil y pagas solo cuando quieras
                 publicarte.
@@ -276,90 +317,91 @@ export default function Ranking({
                 block
                 className="mt-5"
               >
-                REGISTRA TU NEGOCIO
+                Registra tu negocio
               </Button>
               <Button
                 href={`/ingresar${nextParam}`}
-                variant="ghost"
-                block
-                className="mt-3 py-3"
+                variant="link"
+                className="mt-4"
               >
                 Ya tengo cuenta
               </Button>
             </div>
           ) : !viewer.business ? (
-            <p className="mt-6 text-sm text-neutral-600">
+            <p className="text-ink text-[15px] leading-relaxed">
               No encontramos un negocio ligado a tu cuenta.
             </p>
           ) : viewer.business.missing.length > 0 ? (
-            <div className="mt-6">
-              <p className="text-sm leading-6 text-neutral-600">
+            <div>
+              <p className="text-ink text-[15px] leading-relaxed">
                 Antes de publicar, completa tu perfil. Falta:
               </p>
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-neutral-600">
+              <ul className="text-ink mt-2 list-disc space-y-1 pl-5 text-[15px]">
                 {viewer.business.missing.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>
               <Button href="/mi-negocio" size="lg" block className="mt-5">
-                COMPLETAR MI PERFIL
+                Completar mi perfil
               </Button>
             </div>
           ) : viewer.business.position !== null &&
             selectedPosition > viewer.business.position ? (
-            <p className="mt-6 text-sm leading-6 text-neutral-600">
+            <p className="text-ink text-[15px] leading-relaxed">
               Ya ocupas la posición #{viewer.business.position}, que es mejor
               que la #{selectedPosition}. Elige una posición más alta.
             </p>
           ) : (
             <>
-              <div className="bg-accent-100 mt-6 p-5">
-                {selectedBusiness && (
-                  <>
-                    <Muted>
-                      {ownsSelected ? "Tu oferta actual" : "Oferta actual"}
-                    </Muted>
-                    <p className="mt-1">
-                      <Price value={selectedBusiness.current_price} />
-                    </p>
-                    <div className="bg-accent-200 my-4 h-px" />
-                  </>
-                )}
+              {selectedBusiness && (
+                <div className="border-rule flex items-baseline justify-between gap-4 border-b-2 pb-4">
+                  <Eyebrow tone="muted">
+                    {ownsSelected ? "Tu oferta actual" : "Paga ahora"}
+                  </Eyebrow>
+                  <Figure size={22}>
+                    {formatPrice(selectedBusiness.current_price)}
+                  </Figure>
+                </div>
+              )}
 
-                <Muted>
-                  {ownsSelected ? "Nueva oferta para blindarte" : "Tu oferta"}
-                </Muted>
-                <p className="mt-1">
-                  <Price value={amount} size="lg" tone="ink" />
-                </p>
-
-                {reservationAt(selectedPosition) && (
-                  <p className="mt-2 text-xs text-amber-700">
-                    🔒 Hay una reserva activa sobre esta posición; tu oferta ya
-                    la supera.
-                  </p>
-                )}
+              <div className="border-rule flex items-baseline justify-between gap-4 border-b-2 py-4">
+                <Eyebrow>{ownsSelected ? "Nueva oferta" : "Tu oferta"}</Eyebrow>
+                <Figure size={30} tone="accent">
+                  {formatPrice(amount)}
+                </Figure>
               </div>
 
-              <div className="mt-5 space-y-2 text-sm text-neutral-500">
+              {reservationAt(selectedPosition) && (
+                <p className="text-accent-press mt-4 flex items-center gap-2 text-[13px]">
+                  <LiveDot />
+                  Hay una reserva activa sobre esta posición; tu oferta ya la
+                  supera.
+                </p>
+              )}
+
+              <div className="text-muted mt-4 space-y-2 text-[13px] leading-relaxed">
                 <p>
                   Negocio:{" "}
-                  <span className="font-bold text-neutral-800">
-                    {viewer.business.name}
-                  </span>
+                  <strong className="text-ink">{viewer.business.name}</strong>
                 </p>
                 <p>
-                  Al continuar reservamos la posición a este precio durante{" "}
-                  {RESERVATION_MINUTES} minutos y te enviamos a Mercado Pago. La
-                  posición se asigna al confirmarse el pago.
+                  Reservamos la posición a este precio durante{" "}
+                  {RESERVATION_MINUTES} minutos y te enviamos a Mercado Pago. Tu
+                  lugar es tuyo mientras nadie pague más.
                 </p>
-                <p className="text-xs leading-5 text-neutral-400">
+                <p>
                   Al continuar aceptas los{" "}
-                  <Link href="/terminos" className="underline">
+                  <Link
+                    href="/terminos"
+                    className="text-accent-press underline"
+                  >
                     términos y condiciones
                   </Link>{" "}
                   y la{" "}
-                  <Link href="/responsiva" className="underline">
+                  <Link
+                    href="/responsiva"
+                    className="text-accent-press underline"
+                  >
                     carta responsiva
                   </Link>
                   .
@@ -367,7 +409,7 @@ export default function Ranking({
               </div>
 
               {notice && (
-                <Alert tone="warning" compact className="mt-4">
+                <Alert tone="accent" compact className="mt-4">
                   {notice}
                 </Alert>
               )}
@@ -377,21 +419,6 @@ export default function Ranking({
                   {error}
                 </Alert>
               )}
-
-              <Button
-                variant="accent"
-                size="lg"
-                block
-                onClick={reserveAndPay}
-                disabled={loading}
-                className="mt-5"
-              >
-                {loading
-                  ? "RESERVANDO..."
-                  : notice
-                    ? `OFERTAR ${formatPrice(amount)}`
-                    : "RESERVAR Y PAGAR"}
-              </Button>
             </>
           )}
         </Modal>

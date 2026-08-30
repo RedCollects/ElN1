@@ -30,7 +30,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "rule border",
+        "border-rule border-2",
         tone === "surface" ? "bg-surface" : "bg-bg",
         PADDING[padding],
         className,
@@ -56,8 +56,8 @@ export function CardSection({
   children,
 }: CardSectionProps) {
   return (
-    <section className={cn("rule bg-surface border", className)}>
-      <header className="rule border-b px-6 py-5">
+    <section className={cn("border-rule bg-surface border-2", className)}>
+      <header className="border-rule border-b-2 px-6 py-5">
         <h2 className="text-[22px] leading-tight font-extrabold tracking-[-0.01em]">
           {title}
         </h2>

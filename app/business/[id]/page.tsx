@@ -7,6 +7,7 @@ import {
   Container,
   EmptyState,
   Eyebrow,
+  Icon,
   Muted,
   PageShell,
   Price,
@@ -142,7 +143,7 @@ export default async function BusinessPage({
                     target={link.external ? "_blank" : undefined}
                     rel={link.external ? "noopener noreferrer" : undefined}
                   >
-                    {link.emoji} {link.label}
+                    <Icon name={link.icon} size={16} /> {link.label}
                   </Button>
                 ))}
               </div>

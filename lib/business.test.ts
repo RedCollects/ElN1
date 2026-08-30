@@ -128,8 +128,13 @@ describe("contactLinks", () => {
     const links = contactLinks({ phone: "2221234567", email_public: "a@b.c" });
 
     expect(links).toEqual([
-      { label: "Llamar", emoji: "📞", href: "tel:2221234567", external: false },
-      { label: "Email", emoji: "✉️", href: "mailto:a@b.c", external: false },
+      {
+        label: "Llamar",
+        icon: "phone",
+        href: "tel:2221234567",
+        external: false,
+      },
+      { label: "Email", icon: "mail", href: "mailto:a@b.c", external: false },
     ]);
   });
 });

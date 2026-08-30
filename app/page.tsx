@@ -12,8 +12,11 @@ import {
   Container,
   EmptyState,
   Eyebrow,
+  Figure,
   Heading,
   Lead,
+  LiveDot,
+  NavLink,
   PageShell,
   SiteFooter,
   SiteHeader,
@@ -169,31 +172,31 @@ export default async function Home({
   const rankedBusinesses = (businesses ?? []).filter((business) =>
     isValidPosition(business.position),
   );
+  const leader =
+    rankedBusinesses.find((business) => business.position === 1) ?? null;
+  const occupied = rankedBusinesses.length;
 
   return (
     <PageShell>
       <SiteHeader>
-        <SiteExperience initialStats={stats} />
-
-        <Button href="/como-funciona" variant="outline" size="sm">
-          ¿Cómo funciona?
-        </Button>
-
+        <div className="hidden md:block">
+          <SiteExperience initialStats={stats} />
+        </div>
+        <NavLink href="/como-funciona" className="hidden sm:inline-block">
+          Cómo funciona
+        </NavLink>
         {user ? (
-          <Button href="/mi-negocio" size="sm">
+          <NavLink href="/mi-negocio" prefix>
             Mi negocio
-          </Button>
+          </NavLink>
         ) : (
           <>
-            <Button
-              href="/ingresar"
-              variant="ghost"
-              className="hidden sm:inline-flex"
-            >
+            <NavLink href="/ingresar" className="hidden sm:inline-block">
               Ingresar
-            </Button>
+            </NavLink>
             <Button href="/registro" size="sm">
-              Registra tu negocio
+              <span className="sm:hidden">Registrarme</span>
+              <span className="hidden sm:inline">Registra tu negocio</span>
             </Button>
           </>
         )}
@@ -201,42 +204,43 @@ export default async function Home({
 
       <PaymentNotice status={payment} />
 
-      <Container className="pt-14 pb-12 text-center sm:pt-20">
-        <Eyebrow className="mb-4">Atención para negocios mexicanos</Eyebrow>
-
-        <Heading as="h1" size="display" className="mx-auto max-w-4xl">
-          Tu negocio merece
-          <span className="text-accent block">estar arriba.</span>
+      <Container className="pt-12 pb-12 sm:pt-16">
+        <Eyebrow>Ranking público de negocios en México</Eyebrow>
+        <Heading as="h1" size="display" className="mt-4 max-w-[900px]">
+          Quien paga más queda arriba.
         </Heading>
-
-        <Lead className="mx-auto mt-6 max-w-2xl">
-          El ranking público donde los negocios compiten por visibilidad. Tú
-          decides hasta dónde subir.
+        <Lead className="mt-6 max-w-[640px]">
+          {MAX_RANKING_POSITION} posiciones. Cada lugar es de quien lo paga,
+          mientras nadie pague más. Tú decides hasta dónde subir.
         </Lead>
 
-        <div className="mx-auto mt-8 grid max-w-3xl grid-cols-3 divide-x divide-neutral-200 border border-neutral-200 bg-neutral-50 py-4 text-left">
-          <div className="px-5">
-            <p className="text-xs tracking-wider text-neutral-400 uppercase">
-              Ranking
+        <div className="border-rule mt-10 grid border-2 sm:grid-cols-3">
+          <div className="border-rule border-b-2 px-5 py-4 sm:border-r-2 sm:border-b-0">
+            <p className="label text-faint">El N1 ahora</p>
+            <p className="mt-2 truncate text-xl leading-tight font-extrabold tracking-[-0.01em]">
+              {leader ? leader.name : "Posición libre"}
             </p>
-            <p className="mt-1 font-black">Top {MAX_RANKING_POSITION}</p>
           </div>
-          <div className="px-5">
-            <p className="text-xs tracking-wider text-neutral-400 uppercase">
-              Moneda
+          <div className="border-rule border-b-2 px-5 py-4 sm:border-r-2 sm:border-b-0">
+            <p className="label text-faint">Posiciones ocupadas</p>
+            <p className="mt-2">
+              <Figure size={22}>
+                {occupied} / {MAX_RANKING_POSITION}
+              </Figure>
             </p>
-            <p className="mt-1 font-black">MXN</p>
           </div>
-          <div className="px-5">
-            <p className="text-xs tracking-wider text-neutral-400 uppercase">
-              Estado
+          <div className="px-5 py-4">
+            <p className="label text-faint">Estado</p>
+            <p className="mt-2">
+              <LiveDot className="text-ink">
+                En vivo · se actualiza al pagar
+              </LiveDot>
             </p>
-            <p className="mt-1 font-black text-emerald-500">● En vivo</p>
           </div>
         </div>
       </Container>
 
-      <div className="mx-auto grid w-full max-w-7xl gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
+      <div className="mx-auto grid w-full max-w-[1320px] grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
         <Ranking
           businesses={rankedBusinesses}
           reservations={reservations}
@@ -244,24 +248,28 @@ export default async function Home({
           initialPosition={Number(position) || null}
         />
 
-        <aside className="mx-6 mb-14 h-fit border border-neutral-200 bg-neutral-50 p-6 lg:sticky lg:top-6">
-          <Eyebrow size="xs">Leaderboard</Eyebrow>
-          <h2 className="mt-2 text-xl font-black">Más visitados</h2>
-          <p className="mt-1 text-sm text-neutral-500">
-            La atención también cuenta.
-          </p>
-          <ol className="mt-5 space-y-4">
+        <aside className="border-rule bg-surface mx-4 mb-14 h-fit border-2 sm:mx-8 lg:sticky lg:top-6 lg:mr-8 lg:ml-0">
+          <div className="border-rule border-b-2 px-5 py-4">
+            <Eyebrow tone="muted">Más visitados</Eyebrow>
+            <h2 className="mt-1 text-[22px] leading-tight font-extrabold tracking-[-0.01em]">
+              La atención también cuenta
+            </h2>
+          </div>
+          <ol className="divide-rule-soft divide-y">
             {attentionLeaderboard.length > 0 ? (
               attentionLeaderboard.map((business, index) => (
-                <li key={business.id} className="flex items-center gap-3">
-                  <span className="text-accent-press w-5 text-sm font-black">
+                <li
+                  key={business.id}
+                  className="grid grid-cols-[36px_minmax(0,1fr)] gap-3 px-5 py-4"
+                >
+                  <Figure size={20} tone={index === 0 ? "accent" : "ink"}>
                     {index + 1}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-bold">
+                  </Figure>
+                  <div className="min-w-0">
+                    <p className="truncate text-[15px] font-bold">
                       {business.name}
                     </p>
-                    <p className="text-xs text-neutral-400">
+                    <p className="text-muted text-[13px] tabular-nums">
                       #{business.position ?? "–"} ·{" "}
                       {business.visits.toLocaleString("es-MX")} visitas
                     </p>
@@ -269,15 +277,15 @@ export default async function Home({
                 </li>
               ))
             ) : (
-              <li className="text-sm leading-6 text-neutral-500">
+              <li className="text-muted px-5 py-4 text-sm leading-relaxed">
                 Aún no hay visitas suficientes. Sé de los primeros en descubrir
                 negocios.
               </li>
             )}
           </ol>
-          <div className="mt-6 border-t border-neutral-200 pt-5 text-sm">
-            <p className="font-bold">Transparencia de métricas</p>
-            <p className="mt-1 leading-5 text-neutral-500">
+          <div className="border-rule text-muted border-t-2 px-5 py-4 text-[13px] leading-relaxed">
+            <p className="text-ink font-bold">Transparencia de métricas</p>
+            <p className="mt-1">
               Contamos una visita anónima por dispositivo al día. No vendemos ni
               mostramos datos personales.
             </p>

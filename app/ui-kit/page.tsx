@@ -52,7 +52,7 @@ function Block({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rule mt-14 border-t pt-8">
+    <section className="border-rule mt-14 border-t-2 pt-8">
       <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
         <span className="text-accent text-[12px] font-bold tracking-[0.14em]">
           {index}
@@ -109,14 +109,14 @@ export default function UiKitPage() {
           title="Logo"
           note="Sello troquelado. Un solo peso, sin efectos."
         >
-          <div className="rule grid border sm:grid-cols-4">
-            <div className="rule bg-bg grid aspect-square place-items-center border-b p-9 sm:border-r sm:border-b-0">
+          <div className="border-rule grid border-2 sm:grid-cols-4">
+            <div className="border-rule bg-bg grid aspect-square place-items-center border-b-2 p-9 sm:border-r-2 sm:border-b-0">
               <Seal size={120} tone="ink" />
             </div>
-            <div className="rule bg-ink grid aspect-square place-items-center border-b p-9 sm:border-r sm:border-b-0">
+            <div className="border-rule bg-ink grid aspect-square place-items-center border-b-2 p-9 sm:border-r-2 sm:border-b-0">
               <Seal size={120} tone="paper" />
             </div>
-            <div className="rule bg-accent grid aspect-square place-items-center border-b p-9 sm:border-r sm:border-b-0">
+            <div className="border-rule bg-accent grid aspect-square place-items-center border-b-2 p-9 sm:border-r-2 sm:border-b-0">
               <Seal size={120} tone="paper" />
             </div>
             <div className="bg-surface flex aspect-square flex-col items-start justify-center gap-4 p-6">
@@ -131,11 +131,11 @@ export default function UiKitPage() {
           title="Paleta"
           note="El azul con moderación; todo lo demás es tinta y gris."
         >
-          <div className="rule grid grid-cols-2 border sm:grid-cols-5">
+          <div className="border-rule grid grid-cols-2 border-2 sm:grid-cols-5">
             {SWATCHES.map(([name, cls, hex]) => (
               <div
                 key={name}
-                className="rule border-r border-b p-3 last:border-r-0"
+                className="border-rule border-r-2 border-b-2 p-3 last:border-r-0"
               >
                 <div className={`h-16 ${cls}`} />
                 <p className="mt-2 text-[13px] font-bold">{name}</p>

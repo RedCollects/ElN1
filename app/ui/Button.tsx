@@ -9,7 +9,7 @@ import { cn } from "./cn";
  * `accent` y `outline` son alias de `primary` y `secondary`.
  */
 export type ButtonVariant =
-  "primary" | "secondary" | "ghost" | "link" | "accent" | "outline";
+  "primary" | "secondary" | "ghost" | "link" | "paper" | "accent" | "outline";
 export type ButtonSize = "sm" | "md" | "lg";
 
 const ALIASES: Partial<Record<ButtonVariant, ButtonVariant>> = {
@@ -21,7 +21,9 @@ const VARIANTS: Record<ButtonVariant, string> = {
   primary:
     "bg-accent text-accent-fg hover:bg-accent-hover active:bg-accent-press",
   secondary:
-    "rule border bg-transparent text-ink hover:bg-ink hover:text-bg hover:border-ink",
+    "border-rule border-2 bg-transparent text-ink hover:bg-ink hover:text-bg hover:border-ink",
+  /** Claro sobre el azul a sangre de la tarjeta del líder. */
+  paper: "bg-accent-fg text-accent hover:bg-accent-200 active:bg-accent-300",
   ghost: "text-muted hover:text-accent",
   link: "text-accent-press hover:text-accent underline-offset-2 hover:underline",
   accent: "",
@@ -130,7 +132,7 @@ export function IconButton({
       title={label}
       {...props}
       className={cn(
-        "rule text-ink grid h-[46px] w-[46px] shrink-0 place-items-center border bg-transparent",
+        "border-rule text-ink grid h-[46px] w-[46px] shrink-0 place-items-center border-2 bg-transparent",
         "hover:bg-ink hover:text-bg transition-[background-color,color] duration-[120ms] ease-linear",
         "disabled:cursor-not-allowed disabled:opacity-45",
         className,

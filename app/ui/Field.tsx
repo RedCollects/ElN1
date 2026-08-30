@@ -3,7 +3,7 @@ import { cn } from "./cn";
 
 /** Clases base de cualquier control de formulario: borde de 2px, sin radio. */
 export const controlClassName =
-  "rule mt-2 w-full min-w-0 border bg-bg px-[14px] py-[13px] text-base text-ink outline-none placeholder:text-faint transition-colors duration-[120ms] focus:border-accent disabled:cursor-not-allowed disabled:opacity-45 aria-[invalid=true]:border-accent";
+  "mt-2 w-full min-w-0 border-2 border-rule bg-bg px-[14px] py-[13px] text-base text-ink outline-none placeholder:text-faint transition-colors duration-[120ms] focus:border-accent disabled:cursor-not-allowed disabled:opacity-45 aria-[invalid=true]:border-accent";
 
 /** Variante de borde suave para campos opcionales. */
 export const optionalControlClassName = "border-rule-soft";
@@ -34,7 +34,7 @@ export function PrefixedInput({
   return (
     <div
       className={cn(
-        "rule bg-bg focus-within:border-accent mt-2 flex items-stretch border transition-colors duration-[120ms]",
+        "border-rule bg-bg focus-within:border-accent mt-2 flex items-stretch border-2 transition-colors duration-[120ms]",
         className,
       )}
     >
@@ -63,7 +63,7 @@ export function MoneyInput({
   return (
     <div
       className={cn(
-        "rule bg-bg focus-within:border-accent mt-2 flex items-stretch border transition-colors duration-[120ms]",
+        "border-rule bg-bg focus-within:border-accent mt-2 flex items-stretch border-2 transition-colors duration-[120ms]",
         className,
       )}
     >

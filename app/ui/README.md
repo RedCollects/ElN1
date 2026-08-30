@@ -38,7 +38,7 @@ Tipografía: **Archivo** (única familia, pesos 400–900) vía `next/font` en `
 
 1. **Radio 0 en todo.** Todos los `--radius-*` valen 0 y no se escribe `rounded-*`. La
    única excepción es el sello circular del logo.
-2. **Reglas de 2px** (`rule`) para separar secciones; 1px (`rule-soft`) solo dentro de
+2. **Reglas de 2px** (`border-2 border-rule`) para separar secciones; 1px (`border-rule-soft`) solo dentro de
    tablas y listas.
 3. **Todo al ras izquierdo**, incluido el label dentro de botones anchos. Nunca centrar.
 4. **El azul con moderación**: acción primaria, posición #1, fila propia, en vivo. Sin
@@ -114,7 +114,7 @@ Tipografía: **Archivo** (única familia, pesos 400–900) vía `next/font` en `
 
 1. **Radio 0 en todo.** Todos los `--radius-*` valen 0 y no se escribe `rounded-*`. La
    única excepción es el sello circular del logo.
-2. **Reglas de 2px** (`rule`) para separar secciones; 1px (`rule-soft`) solo dentro de
+2. **Reglas de 2px** (`border-2 border-rule`) para separar secciones; 1px (`border-rule-soft`) solo dentro de
    tablas y listas.
 3. **Todo al ras izquierdo**, incluido el label dentro de botones anchos. Nunca centrar.
 4. **El azul con moderación**: acción primaria, posición #1, fila propia, en vivo. Sin

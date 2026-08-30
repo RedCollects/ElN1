@@ -25,9 +25,20 @@ export function hasBigAd(position: number | null | undefined): boolean {
   );
 }
 
+/** Icono Lucide del botón de contacto (ver app/ui/Icon.tsx). */
+export type ContactIcon =
+  | "message-circle"
+  | "phone"
+  | "mail"
+  | "globe"
+  | "camera"
+  | "share-2"
+  | "music"
+  | "map-pin";
+
 export type ContactLink = {
   label: string;
-  emoji: string;
+  icon: ContactIcon;
   href: string;
   external: boolean;
 };
@@ -39,7 +50,7 @@ export function contactLinks(business: Partial<Business>): ContactLink[] {
   if (business.whatsapp) {
     links.push({
       label: "WhatsApp",
-      emoji: "💬",
+      icon: "message-circle",
       href: whatsappUrl(business.whatsapp),
       external: true,
     });
@@ -47,7 +58,7 @@ export function contactLinks(business: Partial<Business>): ContactLink[] {
   if (business.phone) {
     links.push({
       label: "Llamar",
-      emoji: "📞",
+      icon: "phone",
       href: `tel:${business.phone}`,
       external: false,
     });
@@ -55,7 +66,7 @@ export function contactLinks(business: Partial<Business>): ContactLink[] {
   if (business.email_public) {
     links.push({
       label: "Email",
-      emoji: "✉️",
+      icon: "mail",
       href: `mailto:${business.email_public}`,
       external: false,
     });
@@ -63,7 +74,7 @@ export function contactLinks(business: Partial<Business>): ContactLink[] {
   if (business.website) {
     links.push({
       label: "Sitio web",
-      emoji: "🌐",
+      icon: "globe",
       href: business.website,
       external: true,
     });
@@ -71,7 +82,7 @@ export function contactLinks(business: Partial<Business>): ContactLink[] {
   if (business.instagram) {
     links.push({
       label: "Instagram",
-      emoji: "📸",
+      icon: "camera",
       href: socialUrl("instagram", business.instagram),
       external: true,
     });
@@ -79,7 +90,7 @@ export function contactLinks(business: Partial<Business>): ContactLink[] {
   if (business.facebook) {
     links.push({
       label: "Facebook",
-      emoji: "👍",
+      icon: "share-2",
       href: socialUrl("facebook", business.facebook),
       external: true,
     });
@@ -87,7 +98,7 @@ export function contactLinks(business: Partial<Business>): ContactLink[] {
   if (business.tiktok) {
     links.push({
       label: "TikTok",
-      emoji: "🎵",
+      icon: "music",
       href: socialUrl("tiktok", business.tiktok),
       external: true,
     });
@@ -95,7 +106,7 @@ export function contactLinks(business: Partial<Business>): ContactLink[] {
   if (business.maps_url) {
     links.push({
       label: "Cómo llegar",
-      emoji: "📍",
+      icon: "map-pin",
       href: business.maps_url,
       external: true,
     });

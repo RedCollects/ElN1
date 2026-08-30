@@ -49,9 +49,9 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="rule bg-bg shadow-modal flex max-h-[90vh] w-full max-w-[420px] flex-col border"
+        className="border-rule bg-bg shadow-modal flex max-h-[90vh] w-full max-w-[420px] flex-col border-2"
       >
-        <div className="rule flex items-start justify-between gap-4 border-b px-5 py-4">
+        <div className="border-rule flex items-start justify-between gap-4 border-b-2 px-5 py-4">
           <div className="min-w-0">
             {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
             <h2
@@ -78,7 +78,7 @@ export function Modal({
         <div className="overflow-y-auto px-5 py-6">{children}</div>
 
         {actions && (
-          <div className="rule [&>*+*]:border-rule flex border-t [&>*+*]:border-l-2 [&>*:first-child]:flex-1">
+          <div className="border-rule [&>*+*]:border-rule flex border-t-2 [&>*+*]:border-l-2 [&>*:first-child]:flex-1">
             {actions}
           </div>
         )}

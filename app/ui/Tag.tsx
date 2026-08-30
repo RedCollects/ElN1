@@ -9,6 +9,7 @@ import { cn } from "./cn";
  */
 export type TagTone =
   | "first"
+  | "leader"
   | "available"
   | "taken"
   | "verified"
@@ -22,6 +23,7 @@ export type TagTone =
 
 const TONES: Record<TagTone, string> = {
   first: "bg-accent text-accent-fg",
+  leader: "bg-accent-fg text-accent",
   available: "bg-accent-200 text-accent-press",
   taken: "bg-ink text-bg",
   verified: "text-ink shadow-[inset_0_0_0_2px_var(--color-rule)]",

@@ -31,6 +31,8 @@ type AvatarProps = {
   /** Qué mostrar sin imagen. Por defecto, las iniciales de `alt`. */
   fallback?: ReactNode;
   priority?: boolean;
+  /** `paper` sobre el azul a sangre del líder. */
+  tone?: "surface" | "paper";
   className?: string;
 };
 
@@ -41,6 +43,7 @@ export function Avatar({
   size = "md",
   fallback,
   priority,
+  tone = "surface",
   className,
 }: AvatarProps) {
   const spec = SIZES[size];
@@ -48,7 +51,8 @@ export function Avatar({
   return (
     <div
       className={cn(
-        "bg-surface text-ink flex shrink-0 items-center justify-center overflow-hidden font-extrabold",
+        "flex shrink-0 items-center justify-center overflow-hidden font-extrabold",
+        tone === "paper" ? "bg-accent-fg text-accent" : "bg-surface text-ink",
         spec.box,
         spec.text,
         className,

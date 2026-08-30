@@ -1,7 +1,7 @@
 "use client";
 
 import { contactLinks, type Business } from "@/lib/business";
-import { Avatar, Button, Muted } from "@/app/ui";
+import { Avatar, Button, Icon, Muted } from "@/app/ui";
 import { trackBusinessClick } from "@/app/SiteExperience";
 import { SmartImage } from "./SmartImage";
 
@@ -22,8 +22,8 @@ export function BusinessAd({ business, profileHref }: Props) {
     .join(" · ");
 
   return (
-    <div className="overflow-hidden border border-neutral-200 bg-white">
-      <div className="from-accent to-accent-press relative aspect-[16/7] w-full bg-gradient-to-br">
+    <div className="border-rule bg-bg text-ink border-2">
+      <div className="border-rule bg-surface relative aspect-[16/7] w-full border-b-2">
         {business.cover_url && (
           <SmartImage
             src={business.cover_url}
@@ -35,52 +35,51 @@ export function BusinessAd({ business, profileHref }: Props) {
         )}
       </div>
 
-      <div className="relative px-5 pb-5">
-        <Avatar
-          src={business.logo_url}
-          alt={`Logo de ${business.name}`}
-          size="md"
-          className="-mt-10 bg-white"
-        />
+      <div className="flex items-start gap-4 p-5">
+        <Avatar src={business.logo_url} alt={business.name} size="md" />
+        <div className="min-w-0 flex-1">
+          <h3 className="text-2xl leading-tight font-extrabold tracking-[-0.02em]">
+            {business.name}
+          </h3>
+          {subtitle && <Muted className="mt-1">{subtitle}</Muted>}
+        </div>
+      </div>
 
-        <h3 className="mt-3 text-2xl leading-tight font-black">
-          {business.name}
-        </h3>
+      {business.tagline && (
+        <p className="text-ink px-5 pb-5 text-base leading-relaxed">
+          {business.tagline}
+        </p>
+      )}
 
-        {subtitle && <Muted className="mt-1">{subtitle}</Muted>}
+      {links.length > 0 && (
+        <div className="border-rule grid border-t-2 sm:grid-cols-2">
+          {links.map((link, index) => (
+            <Button
+              key={link.label}
+              href={link.href}
+              variant={index === 0 ? "primary" : "ghost"}
+              size="md"
+              block
+              className="border-rule border-b-2 px-5 last:border-b-0 sm:odd:border-r-2 sm:[&:nth-last-child(-n+2)]:border-b-0"
+              target={link.external ? "_blank" : undefined}
+              rel={link.external ? "noopener noreferrer" : undefined}
+            >
+              <Icon name={link.icon} size={16} />
+              {link.label}
+            </Button>
+          ))}
+        </div>
+      )}
 
-        {business.tagline && (
-          <p className="mt-3 text-base leading-6 text-neutral-700">
-            {business.tagline}
-          </p>
-        )}
-
-        {links.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-2">
-            {links.map((link, index) => (
-              <Button
-                key={link.label}
-                href={link.href}
-                variant={index === 0 ? "primary" : "outline"}
-                size="sm"
-                className="text-sm"
-                target={link.external ? "_blank" : undefined}
-                rel={link.external ? "noopener noreferrer" : undefined}
-              >
-                {link.emoji} {link.label}
-              </Button>
-            ))}
-          </div>
-        )}
-
-        {profileHref && (
+      {profileHref && (
+        <div className="border-rule border-t-2 px-5 py-3">
           <span onClick={() => business.id && trackBusinessClick(business.id)}>
-            <Button href={profileHref} variant="link" className="mt-4">
-              Ver página completa →
+            <Button href={profileHref} variant="link">
+              Ver página completa
             </Button>
           </span>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

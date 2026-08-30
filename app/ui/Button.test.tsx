@@ -35,7 +35,7 @@ describe("Button", () => {
       "bg-accent",
     );
     expect(screen.getByRole("button", { name: "B" }).className).toContain(
-      "rule",
+      "border-rule",
     );
   });
 

@@ -29,7 +29,7 @@ export function Segmented<T extends string | number>({
     <div
       role="group"
       aria-label={label}
-      className={cn("rule flex border", className)}
+      className={cn("border-rule flex border-2", className)}
     >
       {options.map((option) => {
         const selected = option.value === value;

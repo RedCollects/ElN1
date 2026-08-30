@@ -6,7 +6,7 @@ import {
   type Business,
   type EditableField,
 } from "@/lib/business";
-import { RankingCard } from "@/app/components/RankingCard";
+import { SlotCard } from "@/app/components/SlotCard";
 import { CardSection, Eyebrow, Muted } from "@/app/ui";
 import { ImageUploader } from "./image-uploader";
 import { ProfileForm } from "./profile-form";
@@ -78,7 +78,7 @@ export function BusinessEditor({ business }: Props) {
         </Muted>
 
         <div className="mt-4">
-          <RankingCard
+          <SlotCard
             position={business.position ?? 1}
             business={preview}
             forceExpanded

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Icon, LiveDot } from "@/app/ui";
 
 type Stats = { today: number; total: number; online: number };
 
@@ -24,6 +25,8 @@ export function trackBusinessClick(businessId: string) {
     keepalive: true,
   }).catch(() => undefined);
 }
+
+const fmt = (value: number) => value.toLocaleString("es-MX");
 
 export default function SiteExperience({
   initialStats,
@@ -74,26 +77,21 @@ export default function SiteExperience({
   }
 
   return (
-    <div className="flex items-center gap-3 text-xs font-medium text-neutral-500 dark:text-neutral-400">
-      <span className="lg:hidden">
-        <b className="text-emerald-500">●</b>{" "}
-        {stats.online.toLocaleString("es-MX")}
+    <div className="flex items-center gap-4">
+      <LiveDot>
+        <span className="tabular-nums">{fmt(stats.online)}</span>
+        <span className="hidden lg:inline">en línea</span>
+      </LiveDot>
+      <span className="label text-faint hidden tabular-nums xl:inline">
+        {fmt(stats.today)} hoy · {fmt(stats.total)} en total
       </span>
-      <div className="hidden items-center gap-3 lg:flex">
-        <span>
-          <b className="text-emerald-500">●</b>{" "}
-          {stats.online.toLocaleString("es-MX")} en línea
-        </span>
-        <span>{stats.today.toLocaleString("es-MX")} visitas hoy</span>
-        <span>{stats.total.toLocaleString("es-MX")} históricas</span>
-      </div>
       <button
         type="button"
         onClick={toggleTheme}
         aria-label={dark ? "Activar modo claro" : "Activar modo nocturno"}
-        className="border border-neutral-200 px-3 py-2 text-sm transition hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800"
+        className="border-rule text-ink hover:bg-ink hover:text-bg grid h-9 w-9 place-items-center border-2 transition-colors duration-[120ms]"
       >
-        {dark ? "☀️" : "🌙"}
+        <Icon name={dark ? "sun" : "moon"} size={16} />
       </button>
     </div>
   );

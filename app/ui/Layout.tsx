@@ -71,7 +71,7 @@ type SiteHeaderProps = {
 /** Nav de 68px a todo el ancho con regla inferior de 2px. */
 export function SiteHeader({ children, subtitle }: SiteHeaderProps) {
   return (
-    <header className="rule border-b">
+    <header className="border-rule border-b-2">
       <Container className="flex h-[68px] items-center justify-between gap-6">
         <div className="flex min-w-0 items-center gap-4">
           <Logo />
@@ -90,7 +90,7 @@ export function SiteHeader({ children, subtitle }: SiteHeaderProps) {
 
 export function SiteFooter() {
   return (
-    <footer className="rule mt-auto border-t">
+    <footer className="border-rule mt-auto border-t-2">
       <Container className="flex flex-wrap items-center justify-between gap-x-8 gap-y-3 py-8">
         <p className="label text-faint">EL N1 — México</p>
         <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
