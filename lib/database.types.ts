@@ -37,6 +37,7 @@ export type Database = {
       bids: {
         Row: {
           terms_version: string | null;
+          entry: boolean;
           amount: number;
           business_id: string | null;
           business_name: string;
@@ -54,6 +55,7 @@ export type Database = {
         };
         Insert: {
           terms_version?: string | null;
+          entry?: boolean;
           amount: number;
           business_id?: string | null;
           business_name: string;
@@ -71,6 +73,7 @@ export type Database = {
         };
         Update: {
           terms_version?: string | null;
+          entry?: boolean;
           amount?: number;
           business_id?: string | null;
           business_name?: string;
@@ -290,12 +293,15 @@ export type Database = {
           ranking_position: number;
         }[];
       };
+      compact_ranking: { Args: never; Returns: undefined };
       expire_bids: { Args: never; Returns: number };
       position_state: {
-        Args: { p_position: number };
+        Args: { p_position: number; p_business_id?: string | null };
         Returns: {
           current_price: number;
+          floor_price: number;
           holder_id: string;
+          next_free_position: number;
           reserved_amount: number;
           reserved_until: string;
         }[];
