@@ -28,6 +28,12 @@ export function trackBusinessClick(businessId: string) {
 
 const fmt = (value: number) => value.toLocaleString("es-MX");
 
+/* Los tokens de color se redefinen bajo [data-theme="dark"] en globals.css. */
+function applyTheme(dark: boolean) {
+  if (dark) document.documentElement.dataset.theme = "dark";
+  else delete document.documentElement.dataset.theme;
+}
+
 export default function SiteExperience({
   initialStats,
 }: {
@@ -43,7 +49,7 @@ export default function SiteExperience({
       (!savedTheme &&
         window.matchMedia("(prefers-color-scheme: dark)").matches);
 
-    document.documentElement.classList.toggle("dark", useDark);
+    applyTheme(useDark);
     const themeFrame = window.requestAnimationFrame(() => setDark(useDark));
 
     const sessionId = getSessionId();
@@ -72,7 +78,7 @@ export default function SiteExperience({
   function toggleTheme() {
     const nextTheme = !dark;
     setDark(nextTheme);
-    document.documentElement.classList.toggle("dark", nextTheme);
+    applyTheme(nextTheme);
     window.localStorage.setItem("eln1-theme", nextTheme ? "dark" : "light");
   }
 

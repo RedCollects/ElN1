@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 /*
  * Tokens de diseño de EL N1 (marca v2 Azul).
@@ -114,10 +114,10 @@ body {
   color: var(--color-ink);
 }
 
-/* Modo nocturno (clase .dark en <html>, la controla SiteExperience).
+/* Modo nocturno (`data-theme="dark"` en <html>, lo controla SiteExperience).
    Mismos roles, valores invertidos: las utilidades de Tailwind leen estas
    variables, así que ningún componente necesita clases dark:*. */
-.dark {
+[data-theme="dark"] {
   --color-bg: #14161b;
   --color-surface: #1f232a;
   --color-surface-2: #23272e;
