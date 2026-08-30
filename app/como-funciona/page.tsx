@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { INITIAL_PRICES, MAX_RANKING_POSITION, OUTBID_FACTOR } from "../../lib/prices";
+import { BASE_PRICE, MAX_OFFER, MAX_RANKING_POSITION, OUTBID_FACTOR } from "../../lib/prices";
 import { RESERVATION_MINUTES } from "../../lib/payments";
 import { BIG_AD_MAX_POSITION } from "../../lib/business";
 import { formatPrice } from "../../lib/format";
@@ -25,11 +25,14 @@ export const metadata: Metadata = {
  * Esta página es la referencia oficial de las reglas (los Términos remiten a
  * "las reglas visibles del sitio"). Todos los números salen del código
  * (lib/prices, lib/payments, lib/business) para que nunca queden desfasados.
+ *
+ * Regla del equipo: cada PR que cambie precios, posiciones, reservas o el
+ * anuncio grande debe revisar esta página en el mismo PR.
  */
 
-/** Posiciones con precio de salida escalonado; de ahí en adelante todas cuestan lo mismo. */
-const PRICED_POSITIONS = 10;
 const OUTBID_PERCENT = Math.round((OUTBID_FACTOR - 1) * 100);
+const BASE = formatPrice(BASE_PRICE);
+const BASE_OUTBID = formatPrice(Math.ceil(BASE_PRICE * OUTBID_FACTOR));
 
 const STEPS = [
   {
@@ -37,8 +40,8 @@ const STEPS = [
     body: "Crea una cuenta con tu correo y completa el perfil de tu negocio: nombre, categoría, ciudad, logo y al menos un medio de contacto (WhatsApp, teléfono, correo o sitio web). Es gratis y no te compromete a nada.",
   },
   {
-    title: "Elige una posición y haz tu oferta",
-    body: `El ranking tiene ${MAX_RANKING_POSITION} lugares. Si el lugar está libre, pagas su precio de salida. Si está ocupado, tu oferta debe superar en al menos ${OUTBID_PERCENT} % la oferta que lo sostiene. El sitio te muestra siempre el mínimo exacto.`,
+    title: "Entra al ranking o supera a alguien",
+    body: `Siempre hay exactamente un lugar libre: el siguiente al último ocupado, y cuesta ${BASE}. Si prefieres una posición ocupada, tu oferta debe superar en al menos ${OUTBID_PERCENT} % lo que se ha pagado desde esa posición hacia abajo. El sitio te muestra siempre el mínimo exacto, y puedes ofrecer más.`,
   },
   {
     title: "Reserva y paga con Mercado Pago",
@@ -46,18 +49,32 @@ const STEPS = [
   },
 ];
 
+/** Ejemplo de la regla "máximo hacia abajo" con números reales del código. */
+const EXAMPLE = [
+  { position: 1, paid: BASE_PRICE, floor: 500 },
+  { position: 2, paid: 500, floor: 500 },
+  { position: 3, paid: BASE_PRICE, floor: BASE_PRICE },
+].map((row) => ({
+  ...row,
+  toBeat: Math.ceil(row.floor * OUTBID_FACTOR),
+}));
+
 const RULES = [
   {
-    title: "Precios de salida",
-    body: `De la #1 a la #${PRICED_POSITIONS} el precio de salida baja de ${formatPrice(INITIAL_PRICES[1])} a ${formatPrice(INITIAL_PRICES[PRICED_POSITIONS])}. De la #${PRICED_POSITIONS + 1} a la #${MAX_RANKING_POSITION} todas cuestan ${formatPrice(INITIAL_PRICES[MAX_RANKING_POSITION])}. Solo aplican cuando el lugar está libre.`,
+    title: "Un solo lugar libre",
+    body: `El ranking tiene ${MAX_RANKING_POSITION} lugares y se llena en orden: nadie puede saltarse al #${MAX_RANKING_POSITION} si el #2 está vacío. El siguiente lugar libre siempre cuesta ${BASE}. Si dos negocios entran al mismo tiempo, el primero en confirmar su pago queda arriba y el segundo justo debajo: nadie pierde su dinero.`,
   },
   {
     title: "Superar a un negocio",
-    body: `Para quitarle el lugar a alguien pagas al menos ${OUTBID_PERCENT} % más que su oferta actual. Ese negocio y todos los que están debajo bajan un lugar; el que estaba en la #${MAX_RANKING_POSITION} sale del ranking.`,
+    body: `Para quitarle el lugar a alguien pagas al menos ${OUTBID_PERCENT} % más que la oferta más alta desde esa posición hacia abajo (no solo la de ese negocio). Así subir siempre cuesta más que quedarse abajo. Ese negocio y todos los que están debajo bajan un lugar; el que estaba en la #${MAX_RANKING_POSITION} sale del ranking.`,
   },
   {
-    title: "Reservas visibles",
-    body: `Cuando alguien inicia un pago, todos ven un aviso con el monto reservado y un contador de ${RESERVATION_MINUTES} minutos. La reserva no bloquea a nadie: puedes superarla ofreciendo ${OUTBID_PERCENT} % más. Si el pago no llega a tiempo, la reserva desaparece.`,
+    title: "Ofrece lo que quieras",
+    body: `El mínimo es el piso, no el precio. Puedes ofrecer más (hasta ${formatPrice(MAX_OFFER)}) para que superarte cueste ${OUTBID_PERCENT} % más que lo que tú pagaste. Quien pone ${formatPrice(1000)} por el #1 solo sale cuando alguien pague ${formatPrice(Math.ceil(1000 * OUTBID_FACTOR))}.`,
+  },
+  {
+    title: "Reservas visibles y ranking en vivo",
+    body: `Cuando alguien inicia un pago, todos ven un aviso con el monto reservado y un contador de ${RESERVATION_MINUTES} minutos. La reserva no bloquea a nadie: puedes superarla ofreciendo ${OUTBID_PERCENT} % más. El ranking se actualiza solo; si la posición que estás viendo cambia antes de que pagues, te avisamos en pantalla.`,
   },
   {
     title: "Gana quien paga más, no quien da clic primero",
@@ -65,7 +82,7 @@ const RULES = [
   },
   {
     title: "Subir y blindar",
-    body: "Si ya estás en el ranking, puedes comprar una posición más alta (te mueves y los de en medio bajan un lugar) o pagar por tu propia posición para subir tu oferta y hacerla más difícil de superar. No puedes comprar una posición peor que la que ya tienes.",
+    body: "Si ya estás en el ranking, puedes comprar una posición más alta (te mueves y los de en medio bajan un lugar; el hueco que dejas se cierra) o pagar por tu propia posición para subir tu oferta y hacerla más difícil de superar. No puedes comprar una posición peor que la que ya tienes.",
   },
   {
     title: "El anuncio grande",
@@ -77,7 +94,7 @@ const FAQ = [
   {
     question: "¿Cuánto dura mi posición?",
     answer:
-      "Hasta que alguien pague más que tú. Puede ser una hora o puede ser meses. Pagas por ocupar la posición en ese momento, no por un tiempo garantizado.",
+      "Hasta que alguien pague más que tú. Puede ser una hora o puede ser meses. La posición no caduca: pagas por ocuparla, no por un tiempo garantizado.",
   },
   {
     question: "¿Me devuelven el dinero si me superan?",
@@ -87,7 +104,12 @@ const FAQ = [
   {
     question: `¿Qué pasa si salgo del top ${MAX_RANKING_POSITION}?`,
     answer:
-      "Tu negocio deja de aparecer en el ranking, pero tu cuenta, tu perfil y tu página siguen existiendo. Puedes volver a ofertar cuando quieras desde tu panel.",
+      "Tu negocio deja de aparecer en el ranking, pero tu cuenta, tu perfil y tu página siguen existiendo y son visibles por su enlace. Puedes volver a ofertar cuando quieras desde tu panel.",
+  },
+  {
+    question: "¿Los precios incluyen IVA? ¿Dan factura?",
+    answer:
+      "El precio que ves es el importe total que se cobra. Si necesitas factura, el IVA se agrega sobre lo pagado; pídela por correo después del pago.",
   },
   {
     question: "¿Puedo cambiar mi perfil después de pagar?",
@@ -112,8 +134,6 @@ const FAQ = [
 ];
 
 export default function ComoFuncionaPage() {
-  const positions = Array.from({ length: PRICED_POSITIONS }, (_, i) => i + 1);
-
   return (
     <PageShell>
       <SiteHeader>
@@ -162,12 +182,14 @@ export default function ComoFuncionaPage() {
 
           <section className="mt-14">
             <Heading as="h2" size="md">
-              Precios de salida
+              Qué cuesta
             </Heading>
 
             <Muted className="mt-2">
-              Lo que cuesta cada posición cuando está libre. Si está ocupada, la oferta mínima
-              es un {OUTBID_PERCENT} % más que la oferta actual.
+              Entrar al ranking cuesta {BASE}. Superar a alguien cuesta un {OUTBID_PERCENT} %
+              más que la oferta más alta desde esa posición hacia abajo. Por ejemplo, si el #2
+              pagó {formatPrice(500)}, quitarle el #1 a quien pagó {BASE} cuesta{" "}
+              {formatPrice(EXAMPLE[0].toBeat)}, no {BASE_OUTBID}.
             </Muted>
 
             <div className="mt-6 overflow-x-auto rounded-2xl border border-neutral-200">
@@ -175,25 +197,24 @@ export default function ComoFuncionaPage() {
                 <thead className="bg-neutral-50 text-xs font-bold uppercase tracking-wider text-neutral-400">
                   <tr>
                     <th className="px-5 py-3">Posición</th>
-                    <th className="px-5 py-3 text-right">Precio de salida</th>
+                    <th className="px-5 py-3 text-right">Pagó</th>
+                    <th className="px-5 py-3 text-right">Superarla cuesta</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {positions.map((position) => (
-                    <tr key={position} className="border-t border-neutral-100">
-                      <td className="px-5 py-3 font-bold">#{position}</td>
+                  {EXAMPLE.map((row) => (
+                    <tr key={row.position} className="border-t border-neutral-100">
+                      <td className="px-5 py-3 font-bold">#{row.position}</td>
+                      <td className="px-5 py-3 text-right">{formatPrice(row.paid)}</td>
                       <td className="px-5 py-3 text-right font-bold text-brand-500">
-                        {formatPrice(INITIAL_PRICES[position])}
+                        {formatPrice(row.toBeat)}
                       </td>
                     </tr>
                   ))}
                   <tr className="border-t border-neutral-100">
-                    <td className="px-5 py-3 font-bold">
-                      #{PRICED_POSITIONS + 1} a #{MAX_RANKING_POSITION}
-                    </td>
-                    <td className="px-5 py-3 text-right font-bold text-brand-500">
-                      {formatPrice(INITIAL_PRICES[MAX_RANKING_POSITION])}
-                    </td>
+                    <td className="px-5 py-3 font-bold">#{EXAMPLE.length + 1} (libre)</td>
+                    <td className="px-5 py-3 text-right">—</td>
+                    <td className="px-5 py-3 text-right font-bold text-brand-500">{BASE}</td>
                   </tr>
                 </tbody>
               </table>

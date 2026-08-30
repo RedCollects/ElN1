@@ -76,7 +76,7 @@ export default function TermsPage() {
           <section>
             <h2 className="text-xl font-black text-neutral-950">7. Pagos y cambios</h2>
             <p className="mt-2">
-              Los pagos se procesan mediante Mercado Pago. La confirmación de una posición ocurre únicamente después de validar el pago. Cualquier aclaración o reembolso se revisará conforme al estado de la operación y a las políticas aplicables del procesador de pago.
+              Los pagos se procesan mediante Mercado Pago. La confirmación de una posición ocurre únicamente después de validar el pago. Los precios se muestran y se cobran en pesos mexicanos como importe total; si requieres factura, el IVA se agrega sobre el importe pagado y se solicita por correo después del pago. Cualquier aclaración o reembolso se revisará conforme al estado de la operación y a las políticas aplicables del procesador de pago.
             </p>
           </section>
 
