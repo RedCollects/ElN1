@@ -15,7 +15,7 @@ export type Business = Tables<"businesses">;
  * Hasta qué posición se muestra el anuncio grande (hover / toque).
  * Pendiente de decisión de producto: 10 = todos, 3 = solo el podio, 1 = solo EL N1.
  */
-export const BIG_AD_MAX_POSITION = 10;
+export const BIG_AD_MAX_POSITION = 3;
 
 export function hasBigAd(position: number | null | undefined): boolean {
   return (

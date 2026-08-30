@@ -105,6 +105,8 @@ El CI (`.github/workflows/ci.yml`) corre typecheck, lint, tests con cobertura y 
 
 ## Operación
 
+Cómo se despliega, cómo se aplican migraciones en producción, qué hacer ante incidentes y cómo rotar claves: [docs/OPERACION.md](docs/OPERACION.md). En resumen:
+
 - **Logs**: `lib/log.ts` escribe una línea JSON por evento en producción (`level`, `event`, `time` y campos como `paymentId` o `bidId`, buscables en los logs de Vercel) y texto legible en desarrollo.
 - **Reservas caducadas**: la migración 008 programa `expire_bids()` cada 5 minutos con `pg_cron`; antes solo se ejecutaba al iniciar un checkout.
 - **Salud**: `GET /api/health` responde `{ ok, db, version }` (200, o 503 si la base no contesta). Úsalo en el monitor externo.
