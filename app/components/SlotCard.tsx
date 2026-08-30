@@ -164,7 +164,7 @@ export function SlotCard({
               {subtitle}
             </p>
             <p className="mt-3 text-[13px] font-bold tracking-[0.06em] uppercase">
-              Paga {formatPrice(business.current_price)}
+              Paga {formatPrice(business.current_price)} + IVA
             </p>
           </div>
         </button>

@@ -100,6 +100,11 @@ const FAQ = [
       "Sí, cuando quieras y sin costo: nombre, descripción, fotos, contacto y redes se editan desde tu panel y se ven al instante.",
   },
   {
+    question: "¿Los precios incluyen IVA? ¿Dan factura?",
+    answer:
+      "Los montos del ranking son más IVA: antes de pagar ves el desglose y el total. Emitimos factura (CFDI) a quien la pida por correo dentro del mes en que pagó, con su RFC y uso de CFDI; pedirla no cambia el importe.",
+  },
+  {
     question: "¿Puedo pagar en OXXO o por transferencia?",
     answer:
       "Por ahora no: esos pagos se confirman horas o días después, fuera de la ventana de reserva. Aceptamos tarjeta de crédito, débito y saldo de Mercado Pago.",
@@ -260,9 +265,9 @@ export default function ComoFuncionaPage() {
               <Button href="/terminos" variant="link">
                 términos y condiciones
               </Button>{" "}
-              y la{" "}
-              <Button href="/responsiva" variant="link">
-                carta responsiva
+              y el{" "}
+              <Button href="/privacidad" variant="link">
+                aviso de privacidad
               </Button>
               .
             </Muted>

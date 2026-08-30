@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { authLimiter, clientIp } from "@/lib/rate-limit";
 import { createAuthSupabaseClient } from "@/lib/supabase-auth";
 import { signInSchema, signUpSchema } from "@/lib/schemas";
+import { TERMS_VERSION } from "@/lib/legal";
 import { formDataToObject, parseInput } from "@/lib/validation";
 
 export type AuthState = {
@@ -68,7 +69,7 @@ export async function signUp(
     email,
     password,
     options: {
-      data: { business_name: businessName },
+      data: { business_name: businessName, terms_version: TERMS_VERSION },
       emailRedirectTo: appUrl ? `${appUrl}/auth/confirm` : undefined,
     },
   });

@@ -135,6 +135,10 @@ export const signUpSchema = z.object({
     .trim()
     .min(2, "El nombre del negocio debe tener entre 2 y 60 caracteres.")
     .max(60, "El nombre del negocio debe tener entre 2 y 60 caracteres."),
+  /** Casilla del registro; un checkbox HTML manda "on" solo si está marcado. */
+  acceptTerms: z.literal("on", {
+    error: "Para crear tu cuenta acepta los Términos y el Aviso de privacidad.",
+  }),
 });
 
 const CREDENTIALS_ERROR = "Escribe tu correo y tu contraseña.";

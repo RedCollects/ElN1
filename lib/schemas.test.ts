@@ -162,6 +162,7 @@ describe("signUpSchema", () => {
         email: "  Ana@Ejemplo.COM ",
         password: "12345678",
         businessName: " Mi negocio ",
+        acceptTerms: "on",
       }),
     ).toEqual({
       ok: true,
@@ -169,6 +170,7 @@ describe("signUpSchema", () => {
         email: "ana@ejemplo.com",
         password: "12345678",
         businessName: "Mi negocio",
+        acceptTerms: "on",
       },
     });
   });
@@ -178,6 +180,7 @@ describe("signUpSchema", () => {
       email: "a@b.co",
       password: "12345678",
       businessName: "Bar",
+      acceptTerms: "on",
     };
     expect(
       parseInput(signUpSchema, { ...valid, email: "no-es-correo" }).ok,
@@ -197,6 +200,22 @@ describe("signUpSchema", () => {
     ).toMatchObject({
       error: "El nombre del negocio debe tener entre 2 y 60 caracteres.",
     });
+  });
+
+  it("exige la casilla de Términos (un checkbox sin marcar no viaja)", () => {
+    const sinCasilla = {
+      email: "a@b.co",
+      password: "12345678",
+      businessName: "Bar",
+    };
+    expect(parseInput(signUpSchema, sinCasilla)).toMatchObject({
+      ok: false,
+      error:
+        "Para crear tu cuenta acepta los Términos y el Aviso de privacidad.",
+    });
+    expect(
+      parseInput(signUpSchema, { ...sinCasilla, acceptTerms: "true" }).ok,
+    ).toBe(false);
   });
 });
 

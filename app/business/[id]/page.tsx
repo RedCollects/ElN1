@@ -103,7 +103,7 @@ export default async function BusinessPage({
           {item.position && (
             <div className="border-rule grid border-b-2 sm:grid-cols-2">
               <div className="border-rule border-b-2 px-6 py-5 sm:border-r-2 sm:border-b-0 sm:px-8">
-                <p className="label text-faint">Paga ahora</p>
+                <p className="label text-faint">Paga ahora (más IVA)</p>
                 <p className="mt-2">
                   <Figure size={40} tone="accent">
                     {formatPrice(item.current_price)}

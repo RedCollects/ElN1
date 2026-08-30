@@ -100,8 +100,8 @@ export function SiteFooter() {
           <Link href="/terminos" className="text-muted hover:text-ink">
             Términos y condiciones
           </Link>
-          <Link href="/responsiva" className="text-muted hover:text-ink">
-            Carta responsiva
+          <Link href="/privacidad" className="text-muted hover:text-ink">
+            Aviso de privacidad
           </Link>
         </div>
       </Container>

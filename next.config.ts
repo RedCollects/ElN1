@@ -24,6 +24,16 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders }];
   },
+  async redirects() {
+    // La carta responsiva se integró a los Términos (sección "Qué compras y qué no").
+    return [
+      {
+        source: "/responsiva",
+        destination: "/terminos#naturaleza",
+        permanent: true,
+      },
+    ];
+  },
   images: {
     // Solo en desarrollo con Supabase local: next/image bloquea IPs privadas.
     dangerouslyAllowLocalIP:

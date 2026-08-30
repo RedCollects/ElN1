@@ -36,6 +36,7 @@ export type Database = {
     Tables: {
       bids: {
         Row: {
+          terms_version: string | null;
           amount: number;
           business_id: string | null;
           business_name: string;
@@ -52,6 +53,7 @@ export type Database = {
           status: string;
         };
         Insert: {
+          terms_version?: string | null;
           amount: number;
           business_id?: string | null;
           business_name: string;
@@ -68,6 +70,7 @@ export type Database = {
           status?: string;
         };
         Update: {
+          terms_version?: string | null;
           amount?: number;
           business_id?: string | null;
           business_name?: string;
@@ -124,6 +127,8 @@ export type Database = {
       };
       businesses: {
         Row: {
+          terms_accepted_at: string | null;
+          terms_version: string | null;
           active: boolean;
           category: string | null;
           city: string | null;
@@ -151,6 +156,8 @@ export type Database = {
           whatsapp: string | null;
         };
         Insert: {
+          terms_accepted_at?: string | null;
+          terms_version?: string | null;
           active?: boolean;
           category?: string | null;
           city?: string | null;
@@ -178,6 +185,8 @@ export type Database = {
           whatsapp?: string | null;
         };
         Update: {
+          terms_accepted_at?: string | null;
+          terms_version?: string | null;
           active?: boolean;
           category?: string | null;
           city?: string | null;

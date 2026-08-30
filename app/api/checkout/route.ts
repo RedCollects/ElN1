@@ -13,6 +13,7 @@ import {
   mercadoPagoDate,
 } from "@/lib/payments";
 import { log } from "@/lib/log";
+import { TERMS_VERSION, withTax } from "@/lib/legal";
 
 /**
  * Inicia una oferta: valida al dueño y su perfil, calcula el importe contra
@@ -174,6 +175,7 @@ export async function POST(request: Request) {
         category: business.category ?? "General",
         position,
         amount,
+        terms_version: TERMS_VERSION,
         status: "pending",
         expires_at: expiresAt.toISOString(),
       })
@@ -198,11 +200,11 @@ export async function POST(request: Request) {
           items: [
             {
               id: `eln1-position-${position}`,
-              title: `EL N1 - Posición #${position}`,
+              title: `EL N1 - Posición #${position} (IVA incluido)`,
               description: `Posición #${position} - ${business.name}`,
               quantity: 1,
               currency_id: "MXN",
-              unit_price: amount,
+              unit_price: withTax(amount),
             },
           ],
           external_reference: String(bid.id),

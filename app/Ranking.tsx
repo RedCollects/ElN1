@@ -6,6 +6,7 @@ import { RANKING_SIZE, isValidPosition, minimumOfferFor } from "@/lib/prices";
 import type { Business } from "@/lib/business";
 import { RESERVATION_MINUTES, type Reservation } from "@/lib/payments";
 import { formatPrice } from "@/lib/format";
+import { taxBreakdown } from "@/lib/legal";
 import { SlotCard } from "./components/SlotCard";
 import {
   Alert,
@@ -121,6 +122,7 @@ export default function Ranking({
   );
   const liveMinimum = selectedPosition ? minimumOfferAt(selectedPosition) : 0;
   const amount = quotedAmount ?? liveMinimum;
+  const tax = taxBreakdown(amount);
 
   function openPosition(position: number) {
     setSelectedPosition(position);
@@ -364,12 +366,23 @@ export default function Ranking({
                 </div>
               )}
 
-              <div className="border-rule flex items-baseline justify-between gap-4 border-b-2 py-4">
+              <div className="flex items-baseline justify-between gap-4 py-4">
                 <Eyebrow>{ownsSelected ? "Nueva oferta" : "Tu oferta"}</Eyebrow>
                 <Figure size={30} tone="accent">
                   {formatPrice(amount)}
                 </Figure>
               </div>
+              <dl className="border-rule-soft text-muted grid grid-cols-[minmax(0,1fr)_auto] gap-y-1 border-t py-3 text-[13px] tabular-nums">
+                <dt>Subtotal</dt>
+                <dd className="text-right">{formatPrice(tax.subtotal)}</dd>
+                <dt>IVA 16 %</dt>
+                <dd className="text-right">{formatPrice(tax.iva)}</dd>
+                <dt className="text-ink font-bold">Total a pagar</dt>
+                <dd className="text-ink text-right font-bold">
+                  {formatPrice(tax.total)}
+                </dd>
+              </dl>
+              <div className="border-rule border-b-2" />
 
               {reservationAt(selectedPosition) && (
                 <p className="text-accent-press mt-4 flex items-center gap-2 text-[13px]">
@@ -390,21 +403,15 @@ export default function Ranking({
                   lugar es tuyo mientras nadie pague más.
                 </p>
                 <p>
-                  Al continuar aceptas los{" "}
+                  Al pagar aceptas los{" "}
                   <Link
                     href="/terminos"
                     className="text-accent-press underline"
                   >
                     términos y condiciones
-                  </Link>{" "}
-                  y la{" "}
-                  <Link
-                    href="/responsiva"
-                    className="text-accent-press underline"
-                  >
-                    carta responsiva
                   </Link>
-                  .
+                  , incluidas las reglas del ranking y la política de
+                  reembolsos. Tu lugar es tuyo mientras nadie pague más.
                 </p>
               </div>
 
