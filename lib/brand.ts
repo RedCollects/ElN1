@@ -31,12 +31,15 @@ export const SEAL = {
 } as const;
 
 /** Anillo del sello como SVG autónomo (sin texto), para usar como imagen. */
-export function sealRingSvg(stroke: string): string {
+export function sealRingSvg(
+  stroke: string,
+  strokeWidth: number = SEAL.strokeWidth,
+): string {
   const c = SEAL.viewBox / 2;
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${SEAL.viewBox} ${SEAL.viewBox}">` +
     `<circle cx="${c}" cy="${c}" r="${SEAL.radius}" fill="none" stroke="${stroke}" ` +
-    `stroke-width="${SEAL.strokeWidth}" stroke-dasharray="${SEAL.dash}" stroke-linecap="butt"/>` +
+    `stroke-width="${strokeWidth}" stroke-dasharray="${SEAL.dash}" stroke-linecap="butt"/>` +
     `</svg>`
   );
 }

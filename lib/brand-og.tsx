@@ -40,20 +40,25 @@ export async function loadBrandFonts() {
   ];
 }
 
-function ringDataUri(stroke: string) {
-  return `data:image/svg+xml;utf8,${encodeURIComponent(sealRingSvg(stroke))}`;
+function ringDataUri(stroke: string, strokeWidth: number) {
+  return `data:image/svg+xml;utf8,${encodeURIComponent(sealRingSvg(stroke, strokeWidth))}`;
 }
 
 type SealImageProps = {
   size: number;
   /** Color del anillo y del texto. */
   color: string;
-  /** Con menos de 64px el anillo no se lee: solo el "N1". */
+  /** El anillo se engrosa en tamaños chicos para que siga leyéndose. */
   ring?: boolean;
 };
 
 /** Sello "N1" en el subconjunto de CSS que entiende Satori (flex, sin grid). */
-export function SealImage({ size, color, ring = size >= 64 }: SealImageProps) {
+export function SealImage({ size, color, ring = true }: SealImageProps) {
+  // Grosor en unidades del viewBox (200): ~2.5 px reales como mínimo.
+  const strokeWidth = Math.max(
+    SEAL.strokeWidth,
+    Math.round((2.5 * SEAL.viewBox) / size),
+  );
   return (
     <div
       style={{
@@ -68,7 +73,7 @@ export function SealImage({ size, color, ring = size >= 64 }: SealImageProps) {
       {ring && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={ringDataUri(color)}
+          src={ringDataUri(color, strokeWidth)}
           width={size}
           height={size}
           alt=""
@@ -92,7 +97,7 @@ export function SealImage({ size, color, ring = size >= 64 }: SealImageProps) {
   );
 }
 
-/** Icono de app: cuadrado azul con el sello claro. Radio 0. */
+/** Icono de app: el mismo sello del logo, tinta sobre fondo claro. Radio 0. */
 export function AppIcon({ size }: { size: number }) {
   return (
     <div
@@ -102,10 +107,10 @@ export function AppIcon({ size }: { size: number }) {
         justifyContent: "center",
         width: "100%",
         height: "100%",
-        background: BRAND.accent,
+        background: BRAND.bg,
       }}
     >
-      <SealImage size={Math.round(size * 0.84)} color={BRAND.accentFg} />
+      <SealImage size={Math.round(size * 0.92)} color={BRAND.ink} />
     </div>
   );
 }
