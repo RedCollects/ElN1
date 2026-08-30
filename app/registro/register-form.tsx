@@ -58,7 +58,7 @@ export function RegisterForm({ next }: { next?: string }) {
       )}
 
       <Button type="submit" block disabled={pending}>
-        {pending ? "CREANDO CUENTA..." : "CREAR CUENTA"}
+        {pending ? "Creando cuenta…" : "Crear cuenta"}
       </Button>
     </form>
   );

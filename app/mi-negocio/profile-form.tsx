@@ -202,12 +202,11 @@ export function ProfileForm({ business, onChange }: Props) {
 
       <Button
         type="submit"
-        variant="accent"
         size="lg"
         disabled={pending}
-        className="w-full sm:w-auto sm:px-10"
+        className="w-full sm:w-auto"
       >
-        {pending ? "GUARDANDO..." : "GUARDAR CAMBIOS"}
+        {pending ? "Guardando…" : "Guardar cambios"}
       </Button>
     </form>
   );

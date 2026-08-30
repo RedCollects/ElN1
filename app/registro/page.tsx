@@ -21,7 +21,7 @@ export default async function RegisterPage({
     >
       <RegisterForm next={next} />
 
-      <Muted className="mt-6 text-center">
+      <Muted className="mt-6">
         ¿Ya tienes cuenta?{" "}
         <Button href="/ingresar" variant="link">
           Ingresar

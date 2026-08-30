@@ -40,7 +40,6 @@ export function LoginForm() {
         aria-label="Contraseña"
         autoComplete="current-password"
         required
-        className="mt-0"
       />
 
       {error && (
@@ -50,7 +49,7 @@ export function LoginForm() {
       )}
 
       <Button type="submit" block disabled={loading}>
-        {loading ? "VALIDANDO..." : "ENTRAR"}
+        {loading ? "Validando…" : "Entrar"}
       </Button>
     </form>
   );

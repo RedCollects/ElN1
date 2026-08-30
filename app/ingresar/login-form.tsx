@@ -34,7 +34,7 @@ export function LoginForm({ next }: { next?: string }) {
       )}
 
       <Button type="submit" block disabled={pending}>
-        {pending ? "VALIDANDO..." : "ENTRAR"}
+        {pending ? "Validando…" : "Entrar"}
       </Button>
     </form>
   );

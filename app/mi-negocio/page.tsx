@@ -66,11 +66,11 @@ export default async function MyBusinessPage() {
   return (
     <PageShell tone="muted">
       <SiteHeader>
-        <span className="hidden text-neutral-500 sm:inline">{user.email}</span>
+        <span className="text-muted hidden text-sm sm:inline">
+          {user.email}
+        </span>
         <form action={signOut}>
-          <Button variant="ghost" className="underline">
-            Cerrar sesión
-          </Button>
+          <Button variant="ghost">Cerrar sesión</Button>
         </form>
       </SiteHeader>
 
@@ -93,12 +93,12 @@ export default async function MyBusinessPage() {
             <div className="mt-4 flex flex-wrap gap-3">
               <Button
                 href={`/business/${business.id}`}
-                variant="outline"
+                variant="secondary"
                 size="sm"
               >
                 Ver mi página pública
               </Button>
-              <Button href="/" variant="accent" size="sm">
+              <Button href="/" size="sm">
                 Subir de posición
               </Button>
             </div>
@@ -119,7 +119,7 @@ export default async function MyBusinessPage() {
         ) : (
           <Alert tone="info" title="¡Tu perfil está completo!" className="mt-6">
             <p>Elige una posición en el ranking y paga para publicarlo.</p>
-            <Button href="/" variant="accent" className="mt-4">
+            <Button href="/" className="mt-4">
               Elegir posición y pagar
             </Button>
           </Alert>

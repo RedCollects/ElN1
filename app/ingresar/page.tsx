@@ -35,7 +35,7 @@ export default async function LoginPage({
 
       <LoginForm next={next} />
 
-      <Muted className="mt-6 text-center">
+      <Muted className="mt-6">
         ¿Aún no tienes cuenta?{" "}
         <Button href="/registro" variant="link">
           Registra tu negocio

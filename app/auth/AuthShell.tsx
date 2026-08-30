@@ -6,13 +6,13 @@ type Props = {
   children: React.ReactNode;
 };
 
-/** Tarjeta centrada de las páginas de acceso (ingresar, registro, admin). */
+/** Tarjeta de las páginas de acceso (ingresar, registro, admin), al ras izquierdo. */
 export default function AuthShell({ title, subtitle, children }: Props) {
   return (
-    <PageShell tone="muted" centered>
-      <Card padding="lg" elevated className="w-full max-w-sm">
+    <PageShell centered>
+      <Card padding="lg" tone="bg" className="w-full max-w-[440px]">
         <Logo size={28} />
-        <Heading as="h1" className="mt-2">
+        <Heading as="h1" size="title" className="mt-8">
           {title}
         </Heading>
         <Muted className="mt-2">{subtitle}</Muted>

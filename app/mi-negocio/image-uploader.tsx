@@ -8,7 +8,7 @@ import {
   type ImageKind,
 } from "@/lib/image-specs";
 import { SmartImage } from "@/app/components/SmartImage";
-import { Alert, Button, cn } from "@/app/ui";
+import { Alert, Button, Icon, cn } from "@/app/ui";
 
 type Props = {
   kind: ImageKind;
@@ -70,12 +70,12 @@ export function ImageUploader({ kind, currentUrl, onPreview }: Props) {
 
   return (
     <div>
-      <p className="text-sm font-bold">{spec.label}</p>
-      <p className="mt-1 text-xs text-neutral-400">{spec.hint}</p>
+      <p className="label text-neutral-800">{spec.label}</p>
+      <p className="text-muted mt-1 text-[13px]">{spec.hint}</p>
 
       <div
         className={cn(
-          "relative mt-3 overflow-hidden border border-neutral-200 bg-neutral-100",
+          "border-rule bg-surface relative mt-3 overflow-hidden border-2",
           aspectClassName,
         )}
       >
@@ -90,8 +90,8 @@ export function ImageUploader({ kind, currentUrl, onPreview }: Props) {
             className="object-cover"
           />
         ) : (
-          <div className="flex h-full w-full items-center justify-center text-4xl text-neutral-300">
-            {kind === "logo" ? "🏪" : "🖼️"}
+          <div className="text-faint flex h-full w-full items-center justify-center">
+            <Icon name={kind === "logo" ? "store" : "image"} size={24} />
           </div>
         )}
       </div>
@@ -112,28 +112,17 @@ export function ImageUploader({ kind, currentUrl, onPreview }: Props) {
           name="file"
           accept={ACCEPTED_IMAGE_TYPES.join(",")}
           onChange={handleFileChange}
-          className="file: block text-sm text-neutral-500 file:mr-3 file:border-0 file:bg-neutral-900 file:px-4 file:py-2 file:text-xs file:font-bold file:text-white"
+          className="text-muted file:border-rule file:text-ink block text-sm file:mr-3 file:border-2 file:bg-transparent file:px-4 file:py-2 file:text-[12px] file:font-bold file:tracking-[0.08em] file:uppercase"
         />
 
-        <Button
-          type="submit"
-          variant="accent"
-          size="sm"
-          disabled={uploading || !localPreview}
-        >
-          {uploading ? "SUBIENDO..." : "SUBIR"}
+        <Button type="submit" size="sm" disabled={uploading || !localPreview}>
+          {uploading ? "Subiendo…" : "Subir"}
         </Button>
       </form>
 
       {currentUrl && !localPreview && (
         <form action={removeAction} className="mt-2">
-          <Button
-            type="submit"
-            variant="ghost"
-            size="sm"
-            disabled={removing}
-            className="underline"
-          >
+          <Button type="submit" variant="ghost" size="sm" disabled={removing}>
             {removing ? "Quitando..." : "Quitar imagen"}
           </Button>
         </form>
