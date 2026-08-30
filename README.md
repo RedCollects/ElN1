@@ -85,3 +85,7 @@ npx next build --webpack
 ```
 
 El build no requiere variables de entorno: los clientes de Supabase se crean por request, no al importar los módulos.
+
+## Operación
+
+Cómo se despliega, cómo se aplican migraciones en producción, qué hacer ante incidentes y cómo rotar claves: [docs/OPERACION.md](docs/OPERACION.md).
