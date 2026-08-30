@@ -40,8 +40,8 @@ export async function loadBrandFonts() {
   ];
 }
 
-function ringDataUri(stroke: string, strokeWidth: number) {
-  return `data:image/svg+xml;utf8,${encodeURIComponent(sealRingSvg(stroke, strokeWidth))}`;
+function ringDataUri(stroke: string, strokeWidth: number, fill?: string) {
+  return `data:image/svg+xml;utf8,${encodeURIComponent(sealRingSvg(stroke, strokeWidth, fill))}`;
 }
 
 type SealImageProps = {
@@ -50,10 +50,12 @@ type SealImageProps = {
   color: string;
   /** El anillo se engrosa en tamaños chicos para que siga leyéndose. */
   ring?: boolean;
+  /** Color del disco interior; sin él, el centro queda transparente. */
+  disc?: string;
 };
 
 /** Sello "N1" en el subconjunto de CSS que entiende Satori (flex, sin grid). */
-export function SealImage({ size, color, ring = true }: SealImageProps) {
+export function SealImage({ size, color, ring = true, disc }: SealImageProps) {
   // Grosor en unidades del viewBox (200): ~2.5 px reales como mínimo.
   const strokeWidth = Math.max(
     SEAL.strokeWidth,
@@ -73,7 +75,7 @@ export function SealImage({ size, color, ring = true }: SealImageProps) {
       {ring && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={ringDataUri(color, strokeWidth)}
+          src={ringDataUri(color, strokeWidth, disc)}
           width={size}
           height={size}
           alt=""
@@ -119,7 +121,11 @@ export function AppIcon({
         background: background === "bg" ? BRAND.bg : "transparent",
       }}
     >
-      <SealImage size={Math.round(size * 0.96)} color={BRAND.ink} />
+      <SealImage
+        size={Math.round(size * 0.96)}
+        color={BRAND.ink}
+        disc={background === "transparent" ? BRAND.bg : undefined}
+      />
     </div>
   );
 }
