@@ -87,12 +87,12 @@ type LogoProps = {
   /** Alto del sello en px; el wordmark escala con él. */
   size?: number;
   tone?: SealTone;
-  /** Solo el sello, sin "EL N1" al lado. */
+  /** Solo el sello, sin "El … México" alrededor. */
   compact?: boolean;
   className?: string;
 };
 
-/** Lockup horizontal: sello + wordmark "EL N1", alineados al centro, gap 10px. */
+/** Lockup horizontal: "El" + sello + "México", alineados al centro, gap 10px. */
 export function Logo({
   href = "/",
   size = 34,
@@ -107,22 +107,30 @@ export function Logo({
     className,
   );
 
-  const content = (
+  const wordmark = "leading-none font-extrabold tracking-[-0.02em]";
+  const fontSize = Math.round(size * 0.5);
+
+  /* Se lee "El N1 México": la palabra "El" antes del sello y "México" después. */
+  const content = compact ? (
+    <Seal size={size} tone={tone} />
+  ) : (
     <>
+      <span className={wordmark} style={{ fontSize }}>
+        El
+      </span>
       <Seal size={size} tone={tone} />
-      {!compact && (
-        <span
-          className="leading-none font-extrabold tracking-[-0.02em]"
-          style={{ fontSize: Math.round(size * 0.5) }}
-        >
-          EL N1
-        </span>
-      )}
+      <span className={wordmark} style={{ fontSize }}>
+        México
+      </span>
     </>
   );
 
   return href ? (
-    <Link href={href} aria-label="EL N1, ir al inicio" className={classes}>
+    <Link
+      href={href}
+      aria-label="El N1 México, ir al inicio"
+      className={classes}
+    >
       {content}
     </Link>
   ) : (
