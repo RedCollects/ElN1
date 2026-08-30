@@ -1,27 +1,42 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { cn } from "./cn";
+import { Logo } from "./Logo";
 
 type Width = "wide" | "content" | "narrow" | "form";
 
 const WIDTHS: Record<Width, string> = {
-  wide: "max-w-6xl",
-  content: "max-w-4xl",
-  narrow: "max-w-3xl",
-  form: "max-w-sm",
+  wide: "max-w-[1320px]",
+  content: "max-w-[960px]",
+  narrow: "max-w-[760px]",
+  form: "max-w-[420px]",
 };
 
-type ContainerProps = { width?: Width; className?: string; children: ReactNode };
+type ContainerProps = {
+  width?: Width;
+  className?: string;
+  children: ReactNode;
+};
 
 /** Centra el contenido con el ancho estándar y el padding lateral de la app. */
-export function Container({ width = "wide", className, children }: ContainerProps) {
-  return <div className={cn("mx-auto w-full px-6", WIDTHS[width], className)}>{children}</div>;
+export function Container({
+  width = "wide",
+  className,
+  children,
+}: ContainerProps) {
+  return (
+    <div
+      className={cn("mx-auto w-full px-4 sm:px-8", WIDTHS[width], className)}
+    >
+      {children}
+    </div>
+  );
 }
 
 type PageShellProps = {
-  /** Fondo blanco (portada) o gris (paneles, auth). */
+  /** Se mantiene por compatibilidad: la app tiene un solo fondo (`bg`). */
   tone?: "white" | "muted";
-  /** Centra vertical y horizontalmente (auth, errores). */
+  /** Centra vertical y horizontalmente el contenido (auth, errores). */
   centered?: boolean;
   className?: string;
   children: ReactNode;
@@ -29,7 +44,6 @@ type PageShellProps = {
 
 /** `<main>` de cada página. */
 export function PageShell({
-  tone = "white",
   centered = false,
   className,
   children,
@@ -37,10 +51,9 @@ export function PageShell({
   return (
     <main
       className={cn(
-        "flex min-h-screen flex-1 flex-col text-neutral-900",
-        tone === "white" ? "bg-white" : "bg-neutral-50",
-        centered && "items-center justify-center px-6 py-12",
-        className
+        "bg-bg text-ink flex min-h-screen flex-1 flex-col",
+        centered && "items-center justify-center px-4 py-12 sm:px-8",
+        className,
       )}
     >
       {children}
@@ -48,44 +61,28 @@ export function PageShell({
   );
 }
 
-/** Marca "EL N1". Con `href={null}` no es enlace. */
-export function Logo({ href = "/", className }: { href?: string | null; className?: string }) {
-  const classes = cn("text-2xl font-black tracking-tight text-neutral-950", className);
-  const mark = (
-    <>
-      EL <span className="text-brand">N1</span>
-    </>
-  );
-
-  return href ? (
-    <Link href={href} className={classes}>
-      {mark}
-    </Link>
-  ) : (
-    <div className={classes}>{mark}</div>
-  );
-}
-
 type SiteHeaderProps = {
   /** Contenido a la derecha del logo (navegación, sesión). */
   children?: ReactNode;
-  /** Texto bajo el logo (p. ej. "Panel administrador"). */
+  /** Texto junto al logo (p. ej. "Panel administrador"). */
   subtitle?: ReactNode;
 };
 
-/** Cabecera común: logo a la izquierda, acciones a la derecha. */
+/** Nav de 68px a todo el ancho con regla inferior de 2px. */
 export function SiteHeader({ children, subtitle }: SiteHeaderProps) {
   return (
-    <header className="border-b border-neutral-200 bg-white">
-      <Container className="flex items-center justify-between gap-4 py-5">
-        <div>
+    <header className="border-rule border-b-2">
+      <Container className="flex h-[68px] items-center justify-between gap-6">
+        <div className="flex min-w-0 items-center gap-4">
           <Logo />
-          {subtitle && <p className="text-sm text-neutral-500">{subtitle}</p>}
+          {subtitle && (
+            <p className="label text-muted hidden truncate sm:block">
+              {subtitle}
+            </p>
+          )}
         </div>
 
-        {children && (
-          <nav className="flex items-center gap-2 text-sm font-medium">{children}</nav>
-        )}
+        {children && <nav className="flex items-center gap-2">{children}</nav>}
       </Container>
     </header>
   );
@@ -93,16 +90,21 @@ export function SiteHeader({ children, subtitle }: SiteHeaderProps) {
 
 export function SiteFooter() {
   return (
-    <footer className="mt-auto border-t border-neutral-200 py-8 text-center text-sm text-neutral-400">
-      <p>EL N1 — México</p>
-      <div className="mt-2 flex justify-center gap-4">
-        <Link href="/terminos" className="underline hover:text-neutral-600">
-          Términos y condiciones
-        </Link>
-        <Link href="/responsiva" className="underline hover:text-neutral-600">
-          Carta responsiva
-        </Link>
-      </div>
+    <footer className="border-rule mt-auto border-t-2">
+      <Container className="flex flex-wrap items-center justify-between gap-x-8 gap-y-3 py-8">
+        <p className="label text-faint">EL N1 — México</p>
+        <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+          <Link href="/como-funciona" className="text-muted hover:text-ink">
+            Cómo funciona
+          </Link>
+          <Link href="/terminos" className="text-muted hover:text-ink">
+            Términos y condiciones
+          </Link>
+          <Link href="/privacidad" className="text-muted hover:text-ink">
+            Aviso de privacidad
+          </Link>
+        </div>
+      </Container>
     </footer>
   );
 }
@@ -115,19 +117,28 @@ type EmptyStateProps = {
   children?: ReactNode;
 };
 
-/** Mensaje centrado para páginas vacías o con error. */
-export function EmptyState({ title, tone = "neutral", action, children }: EmptyStateProps) {
+/** Mensaje para páginas vacías o con error, al ras izquierdo. */
+export function EmptyState({
+  title,
+  tone = "neutral",
+  action,
+  children,
+}: EmptyStateProps) {
   return (
-    <div className="mx-auto max-w-md text-center">
+    <div className="w-full max-w-[520px]">
       <h1
         className={cn(
-          "text-3xl font-black",
-          tone === "error" ? "text-red-600" : "text-neutral-950"
+          "text-[34px] leading-[1.1] font-extrabold tracking-[-0.02em]",
+          tone === "error" ? "text-accent-press" : "text-ink",
         )}
       >
         {title}
       </h1>
-      {children && <div className="mt-3 text-sm leading-6 text-neutral-500">{children}</div>}
+      {children && (
+        <div className="text-muted mt-3 text-base leading-relaxed">
+          {children}
+        </div>
+      )}
       {action && <div className="mt-6">{action}</div>}
     </div>
   );

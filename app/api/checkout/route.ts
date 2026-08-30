@@ -1,14 +1,19 @@
 import { NextResponse } from "next/server";
 import { MercadoPagoConfig, Preference } from "mercadopago";
-import { createServerSupabaseClient } from "../../../lib/supabase-server";
-import { getCurrentUser } from "../../../lib/supabase-auth";
-import { isValidPosition, minimumOfferFor } from "../../../lib/prices";
-import { missingForPublish, type Business } from "../../../lib/business";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { getCurrentUser } from "@/lib/supabase-auth";
+import { minimumOfferFor } from "@/lib/prices";
+import { checkoutSchema } from "@/lib/schemas";
+import { parseInput, readJson } from "@/lib/validation";
+import { checkoutLimiter, tooManyRequests } from "@/lib/rate-limit";
+import { missingForPublish } from "@/lib/business";
 import {
   RESERVATION_MINUTES,
   allowCashPayments,
   mercadoPagoDate,
-} from "../../../lib/payments";
+} from "@/lib/payments";
+import { log } from "@/lib/log";
+import { TERMS_VERSION, withTax } from "@/lib/legal";
 
 /**
  * Inicia una oferta: valida al dueño y su perfil, calcula el importe contra
@@ -25,20 +30,23 @@ export async function POST(request: Request) {
     if (!user) {
       return NextResponse.json(
         { error: "Inicia sesión para ofertar.", code: "auth" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
-    const body = await request.json().catch(() => ({}));
-    const position = Number(body.position);
-    const expectedAmount =
-      body.expectedAmount === undefined || body.expectedAmount === null
-        ? null
-        : Number(body.expectedAmount);
+    const limit = await checkoutLimiter().limit(user.id);
 
-    if (!isValidPosition(position)) {
-      return NextResponse.json({ error: "Posición inválida." }, { status: 400 });
+    if (!limit.ok) {
+      return tooManyRequests(limit.retryAfter);
     }
+
+    const parsed = parseInput(checkoutSchema, await readJson(request));
+
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
+    }
+
+    const { position, expectedAmount } = parsed.data;
 
     const supabase = createServerSupabaseClient();
     const { data: businessRow, error: businessError } = await supabase
@@ -48,22 +56,28 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (businessError) {
-      return NextResponse.json({ error: "No se pudo consultar tu negocio." }, { status: 500 });
+      return NextResponse.json(
+        { error: "No se pudo consultar tu negocio." },
+        { status: 500 },
+      );
     }
 
     if (!businessRow) {
       return NextResponse.json(
-        { error: "No encontramos un negocio ligado a tu cuenta.", code: "no_business" },
-        { status: 400 }
+        {
+          error: "No encontramos un negocio ligado a tu cuenta.",
+          code: "no_business",
+        },
+        { status: 400 },
       );
     }
 
-    const business = businessRow as Business;
+    const business = businessRow;
 
     if (!business.active) {
       return NextResponse.json(
         { error: "Tu negocio está desactivado. Escríbenos para reactivarlo." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -76,33 +90,48 @@ export async function POST(request: Request) {
           code: "profile_incomplete",
           missing,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (business.position !== null && position > business.position) {
       return NextResponse.json(
-        { error: `Ya ocupas la posición #${business.position}, que es mejor que la #${position}.` },
-        { status: 400 }
+        {
+          error: `Ya ocupas la posición #${business.position}, que es mejor que la #${position}.`,
+        },
+        { status: 400 },
       );
     }
 
     await supabase.rpc("expire_bids");
 
-    const { data: stateRows, error: stateError } = await supabase.rpc("position_state", {
-      p_position: position,
-    });
+    const { data: stateRows, error: stateError } = await supabase.rpc(
+      "position_state",
+      {
+        p_position: position,
+      },
+    );
 
     if (stateError) {
-      return NextResponse.json({ error: "No se pudo consultar la posición." }, { status: 500 });
+      return NextResponse.json(
+        { error: "No se pudo consultar la posición." },
+        { status: 500 },
+      );
     }
 
     const state = (stateRows ?? [])[0] as
-      | { holder_id: string | null; current_price: number | string | null; reserved_amount: number | string | null; reserved_until: string | null }
+      | {
+          holder_id: string | null;
+          current_price: number | string | null;
+          reserved_amount: number | string | null;
+          reserved_until: string | null;
+        }
       | undefined;
 
-    const holderPrice = state?.current_price != null ? Number(state.current_price) : null;
-    const reservedAmount = state?.reserved_amount != null ? Number(state.reserved_amount) : null;
+    const holderPrice =
+      state?.current_price != null ? Number(state.current_price) : null;
+    const reservedAmount =
+      state?.reserved_amount != null ? Number(state.reserved_amount) : null;
     const floor =
       holderPrice === null && reservedAmount === null
         ? null
@@ -117,14 +146,17 @@ export async function POST(request: Request) {
           amount,
           reservedUntil: state?.reserved_until ?? null,
         },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
     const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
 
     if (!accessToken) {
-      return NextResponse.json({ error: "Falta MERCADOPAGO_ACCESS_TOKEN." }, { status: 500 });
+      return NextResponse.json(
+        { error: "Falta MERCADOPAGO_ACCESS_TOKEN." },
+        { status: 500 },
+      );
     }
 
     // Una sola reserva viva por negocio.
@@ -143,6 +175,7 @@ export async function POST(request: Request) {
         category: business.category ?? "General",
         position,
         amount,
+        terms_version: TERMS_VERSION,
         status: "pending",
         expires_at: expiresAt.toISOString(),
       })
@@ -150,7 +183,10 @@ export async function POST(request: Request) {
       .single();
 
     if (bidError || !bid) {
-      return NextResponse.json({ error: "No se pudo registrar la oferta." }, { status: 500 });
+      return NextResponse.json(
+        { error: "No se pudo registrar la oferta." },
+        { status: 500 },
+      );
     }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL;
@@ -164,16 +200,18 @@ export async function POST(request: Request) {
           items: [
             {
               id: `eln1-position-${position}`,
-              title: `EL N1 - Posición #${position}`,
+              title: `EL N1 - Posición #${position} (IVA incluido)`,
               description: `Posición #${position} - ${business.name}`,
               quantity: 1,
               currency_id: "MXN",
-              unit_price: amount,
+              unit_price: withTax(amount),
             },
           ],
           external_reference: String(bid.id),
           metadata: { bid_id: bid.id, business_id: business.id, position },
-          notification_url: appUrl ? `${appUrl}/api/webhooks/mercadopago` : undefined,
+          notification_url: appUrl
+            ? `${appUrl}/api/webhooks/mercadopago`
+            : undefined,
           back_urls: appUrl
             ? {
                 success: `${appUrl}/?payment=success`,
@@ -190,7 +228,11 @@ export async function POST(request: Request) {
         },
       });
     } catch (error) {
-      console.error("ERROR MERCADO PAGO (preferencia):", error);
+      log.error(
+        "checkout.preference_failed",
+        { bidId: bid.id, position },
+        error,
+      );
       await supabase
         .from("bids")
         .update({ status: "expired", failure_reason: "preferencia_fallida" })
@@ -198,7 +240,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json(
         { error: "Mercado Pago rechazó la solicitud. Inténtalo de nuevo." },
-        { status: 502 }
+        { status: 502 },
       );
     }
 
@@ -215,11 +257,11 @@ export async function POST(request: Request) {
       init_point: result.init_point,
     });
   } catch (error) {
-    console.error("ERROR CHECKOUT:", error);
+    log.error("checkout.failed", {}, error);
 
     return NextResponse.json(
       { error: "No se pudo iniciar el pago." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

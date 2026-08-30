@@ -1,9 +1,9 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getCurrentUser } from "../../lib/supabase-auth";
-import { createServerSupabaseClient } from "../../lib/supabase-server";
-import { processImage } from "../../lib/images-server";
+import { getCurrentUser } from "@/lib/supabase-auth";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { processImage } from "@/lib/images-server";
 import {
   ACCEPTED_IMAGE_TYPES,
   IMAGE_SPECS,
@@ -11,7 +11,9 @@ import {
   imageColumn,
   storagePathFromUrl,
   type ImageKind,
-} from "../../lib/image-specs";
+} from "@/lib/image-specs";
+import type { TablesUpdate } from "@/lib/database.types";
+import { log } from "@/lib/log";
 
 export type ImageState = {
   error?: string;
@@ -33,7 +35,7 @@ async function loadOwnBusiness(userId: string) {
 
 async function removeStoredObject(
   supabase: ReturnType<typeof createServerSupabaseClient>,
-  url: string | null
+  url: string | null,
 ) {
   const path = url ? storagePathFromUrl(url) : null;
 
@@ -51,7 +53,7 @@ function revalidateBusiness(businessId: string) {
 export async function uploadImage(
   kind: ImageKind,
   _previous: ImageState,
-  formData: FormData
+  formData: FormData,
 ): Promise<ImageState> {
   const spec = IMAGE_SPECS[kind];
 
@@ -76,7 +78,9 @@ export async function uploadImage(
   }
 
   if (file.size > spec.maxBytes) {
-    return { error: `La imagen supera los ${spec.maxBytes / 1024 / 1024} MB permitidos.` };
+    return {
+      error: `La imagen supera los ${spec.maxBytes / 1024 / 1024} MB permitidos.`,
+    };
   }
 
   const { supabase, business } = await loadOwnBusiness(user.id);
@@ -90,7 +94,7 @@ export async function uploadImage(
   try {
     processed = await processImage(kind, Buffer.from(await file.arrayBuffer()));
   } catch (error) {
-    console.error("Error al procesar imagen:", error);
+    log.error("image.process_failed", { kind, businessId: business.id }, error);
     return { error: "No pudimos procesar la imagen. Prueba con otro archivo." };
   }
 
@@ -104,7 +108,11 @@ export async function uploadImage(
     });
 
   if (uploadError) {
-    console.error("Error al subir imagen:", uploadError);
+    log.error(
+      "image.upload_failed",
+      { kind, businessId: business.id, path },
+      uploadError,
+    );
     return { error: "No se pudo subir la imagen. Inténtalo de nuevo." };
   }
 
@@ -115,13 +123,20 @@ export async function uploadImage(
   const column = imageColumn(kind);
   const { error: updateError } = await supabase
     .from("businesses")
-    .update({ [column]: publicUrl })
+    .update({ [column]: publicUrl } as Pick<
+      TablesUpdate<"businesses">,
+      typeof column
+    >)
     .eq("id", business.id)
     .eq("owner_id", user.id);
 
   if (updateError) {
     await supabase.storage.from(MEDIA_BUCKET).remove([path]);
-    console.error("Error al guardar la URL de la imagen:", updateError);
+    log.error(
+      "image.save_failed",
+      { kind, businessId: business.id, path },
+      updateError,
+    );
     return { error: "No se pudo guardar la imagen. Inténtalo de nuevo." };
   }
 
@@ -151,12 +166,15 @@ export async function removeImage(kind: ImageKind): Promise<ImageState> {
   const column = imageColumn(kind);
   const { error } = await supabase
     .from("businesses")
-    .update({ [column]: null })
+    .update({ [column]: null } as Pick<
+      TablesUpdate<"businesses">,
+      typeof column
+    >)
     .eq("id", business.id)
     .eq("owner_id", user.id);
 
   if (error) {
-    console.error("Error al quitar imagen:", error);
+    log.error("image.remove_failed", { kind, businessId: business.id }, error);
     return { error: "No se pudo quitar la imagen." };
   }
 

@@ -30,6 +30,18 @@ npx supabase status # muestra la URL y las claves locales para .env.local
 - `MERCADOPAGO_WEBHOOK_SECRET`: secreto de firma del webhook de Mercado Pago.
 - `NEXT_PUBLIC_APP_URL`: URL pública de la aplicación; en producción debe ser HTTPS.
 - `ADMIN_PASSWORD`: contraseña de administración de al menos 12 caracteres.
+- `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN`: Redis de Upstash para los límites de peticiones (`lib/rate-limit.ts`). Sin ellas el límite vive en memoria, que en Vercel no se comparte entre instancias: obligatorias en producción.
+
+## Límites de peticiones
+
+| Endpoint | Límite | Por | Si Upstash falla |
+|---|---|---|---|
+| `POST /api/admin/login` | 5 / 15 min | IP | bloquea |
+| `POST /api/checkout` | 10 / 10 min | usuario | deja pasar |
+| `POST /api/analytics` | 60 / min | IP | deja pasar |
+| registro e ingreso | 10 / 15 min | IP | deja pasar |
+
+Al superarlo la API responde `429` con `Retry-After`; los formularios muestran el mensaje.
 
 ## Ranking y precios
 
@@ -70,22 +82,31 @@ Al volver de Mercado Pago, la portada muestra un aviso según `?payment=success|
 - Aplicar la migración en Supabase.
 - Configurar las variables privadas en el proveedor de hosting, incluido `MERCADOPAGO_WEBHOOK_SECRET`.
 - Configurar el webhook con la URL HTTPS de producción.
-- Proteger `/admin` y `/api/admin` con autenticación y autorización.
+- Proteger `/admin` (página, Server Actions y `/api/admin/login`) con autenticación y autorización.
 - Configurar `ADMIN_PASSWORD` antes de abrir el panel.
+- Crear la base de Upstash Redis y configurar `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`.
+- Aplicar la migración 008 (`pg_cron`) y comprobar en el panel de Supabase que el trabajo `expire-bids` existe.
+- Apuntar un monitor externo a `/api/health`.
 - Configurar políticas RLS y probar pagos aprobados, rechazados, pendientes y repetidos.
 - Sustituir el token de Mercado Pago si alguna vez fue compartido o expuesto.
 
 ## Comprobaciones
 
 ```bash
-npx next typegen   # genera los tipos globales de Next (LayoutProps, PageProps) que tsc necesita
-npx tsc --noEmit
-npm run lint
+npm run check          # typecheck (next typegen + tsc) + lint + tests
+npm test               # solo Vitest; `npm run test:watch` en desarrollo
 npx next build --webpack
+npm run db:types       # regenera lib/database.types.ts tras cambiar una migración (Supabase local levantado)
 ```
 
 El build no requiere variables de entorno: los clientes de Supabase se crean por request, no al importar los módulos.
 
+El CI (`.github/workflows/ci.yml`) corre typecheck, lint, tests con cobertura y build en cada PR y en cada push a `main`.
+
 ## Operación
 
-Cómo se despliega, cómo se aplican migraciones en producción, qué hacer ante incidentes y cómo rotar claves: [docs/OPERACION.md](docs/OPERACION.md).
+- **Runbook**: cómo se despliega, cómo se aplican migraciones en producción, qué hacer ante incidentes y cómo rotar claves: [docs/OPERACION.md](docs/OPERACION.md).
+- **Logs**: `lib/log.ts` escribe una línea JSON por evento en producción (`level`, `event`, `time` y campos como `paymentId` o `bidId`, buscables en los logs de Vercel) y texto legible en desarrollo.
+- **Reservas caducadas**: la migración 008 programa `expire_bids()` cada 5 minutos con `pg_cron`; antes solo se ejecutaba al iniciar un checkout.
+- **Salud**: `GET /api/health` responde `{ ok, db, version }` (200, o 503 si la base no contesta). Úsalo en el monitor externo.
+- **Cabeceras**: `next.config.ts` añade `X-Content-Type-Options`, `X-Frame-Options: DENY`, `Referrer-Policy` y `Permissions-Policy`. Una CSP completa queda pendiente (Mercado Pago y `next/image` requieren orígenes afinados).

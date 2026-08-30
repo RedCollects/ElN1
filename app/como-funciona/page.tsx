@@ -1,12 +1,17 @@
 import type { Metadata } from "next";
-import { INITIAL_PRICES, MAX_RANKING_POSITION, OUTBID_FACTOR } from "../../lib/prices";
-import { RESERVATION_MINUTES } from "../../lib/payments";
-import { BIG_AD_MAX_POSITION } from "../../lib/business";
-import { formatPrice } from "../../lib/format";
+import {
+  INITIAL_PRICES,
+  MAX_RANKING_POSITION,
+  OUTBID_FACTOR,
+} from "@/lib/prices";
+import { RESERVATION_MINUTES } from "@/lib/payments";
+import { BIG_AD_MAX_POSITION } from "@/lib/business";
+import { formatPrice } from "@/lib/format";
 import {
   Button,
   Container,
   Eyebrow,
+  Figure,
   Heading,
   Lead,
   Muted,
@@ -95,12 +100,17 @@ const FAQ = [
       "Sí, cuando quieras y sin costo: nombre, descripción, fotos, contacto y redes se editan desde tu panel y se ven al instante.",
   },
   {
+    question: "¿Los precios incluyen IVA? ¿Dan factura?",
+    answer:
+      "Los montos del ranking son más IVA: antes de pagar ves el desglose y el total. Emitimos factura (CFDI) a quien la pida por correo dentro del mes en que pagó, con su RFC y uso de CFDI; pedirla no cambia el importe.",
+  },
+  {
     question: "¿Puedo pagar en OXXO o por transferencia?",
     answer:
       "Por ahora no: esos pagos se confirman horas o días después, fuera de la ventana de reserva. Aceptamos tarjeta de crédito, débito y saldo de Mercado Pago.",
   },
   {
-    question: "¿Y el leaderboard de \"Más visitados\"?",
+    question: '¿Y el leaderboard de "Más visitados"?',
     answer:
       "Es informativo: cuenta cuántas personas abren cada negocio. No cambia posiciones ni se compra. La única forma de subir en el ranking es ofertar.",
   },
@@ -117,7 +127,7 @@ export default function ComoFuncionaPage() {
   return (
     <PageShell>
       <SiteHeader>
-        <Button href="/" variant="outline" size="sm">
+        <Button href="/" variant="secondary" size="sm">
           Ver ranking
         </Button>
       </SiteHeader>
@@ -126,34 +136,39 @@ export default function ComoFuncionaPage() {
         <article>
           <Eyebrow>¿Cómo funciona?</Eyebrow>
 
-          <Heading as="h1" size="xl" className="mt-3">
+          <Heading as="h1" size="display" className="mt-3">
             ¿Qué es esto?
           </Heading>
 
-          <Lead className="mt-6 text-neutral-600">
-            EL N1 es un ranking público de negocios de México con {MAX_RANKING_POSITION}{" "}
-            lugares. No se gana con votos ni con reseñas: se gana pagando más que el que está
-            arriba. El que más ofrece es EL N1, hasta que alguien lo supere.
+          <Lead className="mt-6">
+            EL N1 es un ranking público de negocios de México con{" "}
+            {MAX_RANKING_POSITION} lugares. No se gana con votos ni con reseñas:
+            se gana pagando más que el que está arriba. El que más ofrece es EL
+            N1, hasta que alguien lo supere.
           </Lead>
 
           <section className="mt-14">
-            <Heading as="h2" size="md">
+            <Heading as="h2" size="h2">
               En tres pasos
             </Heading>
 
-            <ol className="mt-6 space-y-5">
+            <ol className="border-rule mt-6 border-t-2">
               {STEPS.map((step, index) => (
                 <li
                   key={step.title}
-                  className="flex gap-5 rounded-2xl border border-neutral-200 p-5"
+                  className="border-rule-soft grid grid-cols-[48px_minmax(0,1fr)] gap-5 border-b py-5"
                 >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand font-black text-white">
+                  <Figure size={30} tone="accent">
                     {index + 1}
-                  </div>
+                  </Figure>
 
                   <div>
-                    <h3 className="font-bold">{step.title}</h3>
-                    <p className="mt-1 text-sm leading-6 text-neutral-500">{step.body}</p>
+                    <h3 className="text-lg font-extrabold tracking-[-0.01em]">
+                      {step.title}
+                    </h3>
+                    <p className="text-muted mt-1 text-[15px] leading-relaxed">
+                      {step.body}
+                    </p>
                   </div>
                 </li>
               ))}
@@ -161,18 +176,18 @@ export default function ComoFuncionaPage() {
           </section>
 
           <section className="mt-14">
-            <Heading as="h2" size="md">
+            <Heading as="h2" size="h2">
               Precios de salida
             </Heading>
 
             <Muted className="mt-2">
-              Lo que cuesta cada posición cuando está libre. Si está ocupada, la oferta mínima
-              es un {OUTBID_PERCENT} % más que la oferta actual.
+              Lo que cuesta cada posición cuando está libre. Si está ocupada, la
+              oferta mínima es un {OUTBID_PERCENT} % más que la oferta actual.
             </Muted>
 
-            <div className="mt-6 overflow-x-auto rounded-2xl border border-neutral-200">
+            <div className="border-rule mt-6 overflow-x-auto border-2">
               <table className="w-full text-left text-sm">
-                <thead className="bg-neutral-50 text-xs font-bold uppercase tracking-wider text-neutral-400">
+                <thead className="label bg-band text-band-fg">
                   <tr>
                     <th className="px-5 py-3">Posición</th>
                     <th className="px-5 py-3 text-right">Precio de salida</th>
@@ -180,18 +195,20 @@ export default function ComoFuncionaPage() {
                 </thead>
                 <tbody>
                   {positions.map((position) => (
-                    <tr key={position} className="border-t border-neutral-100">
-                      <td className="px-5 py-3 font-bold">#{position}</td>
-                      <td className="px-5 py-3 text-right font-bold text-brand-500">
+                    <tr key={position} className="border-rule-soft border-t">
+                      <td className="figure px-5 py-3 text-base">
+                        #{position}
+                      </td>
+                      <td className="figure text-accent-press px-5 py-3 text-right text-base">
                         {formatPrice(INITIAL_PRICES[position])}
                       </td>
                     </tr>
                   ))}
-                  <tr className="border-t border-neutral-100">
-                    <td className="px-5 py-3 font-bold">
+                  <tr className="border-rule-soft border-t">
+                    <td className="figure px-5 py-3 text-base">
                       #{PRICED_POSITIONS + 1} a #{MAX_RANKING_POSITION}
                     </td>
-                    <td className="px-5 py-3 text-right font-bold text-brand-500">
+                    <td className="figure text-accent-press px-5 py-3 text-right text-base">
                       {formatPrice(INITIAL_PRICES[MAX_RANKING_POSITION])}
                     </td>
                   </tr>
@@ -201,30 +218,44 @@ export default function ComoFuncionaPage() {
           </section>
 
           <section className="mt-14">
-            <Heading as="h2" size="md">
+            <Heading as="h2" size="h2">
               Las reglas
             </Heading>
 
-            <dl className="mt-6 space-y-6">
+            <dl className="border-rule mt-6 border-t-2">
               {RULES.map((rule) => (
-                <div key={rule.title}>
-                  <dt className="font-bold">{rule.title}</dt>
-                  <dd className="mt-1 leading-7 text-neutral-600">{rule.body}</dd>
+                <div
+                  key={rule.title}
+                  className="border-rule-soft border-b py-5"
+                >
+                  <dt className="text-lg font-extrabold tracking-[-0.01em]">
+                    {rule.title}
+                  </dt>
+                  <dd className="text-muted mt-1 leading-relaxed">
+                    {rule.body}
+                  </dd>
                 </div>
               ))}
             </dl>
           </section>
 
           <section className="mt-14">
-            <Heading as="h2" size="md">
+            <Heading as="h2" size="h2">
               Antes de pagar
             </Heading>
 
-            <dl className="mt-6 space-y-6">
+            <dl className="border-rule mt-6 border-t-2">
               {FAQ.map((item) => (
-                <div key={item.question}>
-                  <dt className="font-bold">{item.question}</dt>
-                  <dd className="mt-1 leading-7 text-neutral-600">{item.answer}</dd>
+                <div
+                  key={item.question}
+                  className="border-rule-soft border-b py-5"
+                >
+                  <dt className="text-lg font-extrabold tracking-[-0.01em]">
+                    {item.question}
+                  </dt>
+                  <dd className="text-muted mt-1 leading-relaxed">
+                    {item.answer}
+                  </dd>
                 </div>
               ))}
             </dl>
@@ -234,17 +265,17 @@ export default function ComoFuncionaPage() {
               <Button href="/terminos" variant="link">
                 términos y condiciones
               </Button>{" "}
-              y la{" "}
-              <Button href="/responsiva" variant="link">
-                carta responsiva
+              y el{" "}
+              <Button href="/privacidad" variant="link">
+                aviso de privacidad
               </Button>
               .
             </Muted>
           </section>
 
           <div className="mt-14">
-            <Button href="/" variant="accent" size="lg" block>
-              VER EL RANKING
+            <Button href="/" size="lg" block>
+              Ver el ranking
             </Button>
           </div>
         </article>

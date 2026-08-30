@@ -1,43 +1,143 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 /*
- * Tokens de diseño de EL N1.
- * El color de marca se define aquí una sola vez; en el código se usa como
- * `bg-brand`, `text-brand-500`, `border-brand-200`, etc. (ver app/ui/README.md).
+ * Tokens de diseño de EL N1 (marca v2 Azul).
+ * Fuente de verdad: branding/design_handoff_eln1_azul/tokens/eln1-tokens.css.
+ * En el código se usan como clases de Tailwind: `bg-accent`, `text-accent-press`,
+ * `bg-surface`, `text-muted`, `border-rule`… (ver app/ui/README.md).
+ *
+ * Reglas de la identidad que este archivo hace cumplir:
+ *   1. Radio 0 en todo (todos los `--radius-*` valen 0). La única excepción es
+ *      el sello circular del logo.
+ *   2. Reglas de 2px para separar secciones (`rule`); 1px solo en filas
+ *      internas de tabla o lista (`rule-soft`).
+ *   3. Cifras con `tabular-nums` (`figure`).
  */
 @theme {
-  --color-brand-50: #f0f9ff;
-  --color-brand-100: #e0f2fe;
-  --color-brand-200: #bae6fd;
-  --color-brand-300: #7dd3fc;
-  --color-brand-400: #38bdf8;
-  --color-brand: #38bdf8;
-  --color-brand-500: #0ea5e9;
-  --color-brand-600: #0284c7;
-  --color-brand-900: #0c4a6e;
+  /* Acento — Azul N1 */
+  --color-accent: #1746d4; /* acción primaria, posición #1, en vivo */
+  --color-accent-hover: #1239b0; /* hover del primario */
+  --color-accent-press: #0e2f8f; /* pressed + texto de párrafo en azul (AA) */
+  --color-accent-fg: #f2f3f6; /* texto sobre relleno de acento */
 
-  --font-sans: Arial, Helvetica, sans-serif;
+  --color-accent-100: #eef2ff;
+  --color-accent-200: #dbe4fe;
+  --color-accent-300: #bcccfb;
+  --color-accent-400: #8fa8f5;
+  --color-accent-500: #4b74e8;
+  --color-accent-600: #1239b0;
+  --color-accent-700: #0e2f8f;
+  --color-accent-800: #0a2168;
+  --color-accent-900: #101b40;
+
+  /* Neutrales */
+  --color-bg: #f2f3f6; /* fondo de toda la app */
+  --color-surface: #e7e9ef; /* tarjetas, campos, filas alternas */
+  --color-surface-2: #f5f7fa; /* hover de fila, fondos sutiles */
+  --color-ink: #1b1d22; /* texto y reglas de 2px */
+  --color-muted: #5b6069; /* texto secundario */
+  --color-faint: #95999f; /* etiquetas, valores vacíos */
+  --color-rule: #1b1d22;
+  --color-rule-soft: rgba(27, 29, 34, 0.25);
+  --color-band: #1b1d22; /* bandas de tinta: header de tabla, prefijo $ */
+  --color-band-fg: #f2f3f6;
+
+  --color-neutral-100: #f5f7fa;
+  --color-neutral-200: #e6e9ef;
+  --color-neutral-300: #d3d7de;
+  --color-neutral-400: #b6bac2;
+  --color-neutral-500: #95999f;
+  --color-neutral-600: #767b84;
+  --color-neutral-700: #5b6069;
+  --color-neutral-800: #3f434b;
+  --color-neutral-900: #282b31;
+  --color-neutral-950: #1b1d22;
+
+  /* Forma: nunca redondear */
+  --radius-xs: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
+  --radius-4xl: 0px;
+
+  /* Elevación: una sola sombra, solo para diálogos */
+  --shadow-modal: 0 12px 32px rgba(40, 43, 49, 0.22);
+
   --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
 }
 
+/* La fuente la carga next/font en app/layout.tsx y la expone como --font-archivo. */
+@theme inline {
+  --font-sans:
+    var(--font-archivo), Archivo, system-ui, -apple-system, sans-serif;
+}
+
+/* Reglas: `border-t-2 border-rule` (fuerte, 2px) y `border-t border-rule-soft`
+   (interna, 1px). Los colores salen de los tokens; no hay utilidad extra. */
+
+/* Cifras: peso 900, apretadas, y anchos fijos para que no salten al actualizar. */
+@utility figure {
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Etiqueta: 11px / 700 / 0.12em / mayúsculas. */
+@utility label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
 body {
-  background: #ffffff;
-  color: #171717;
+  background: var(--color-bg);
+  color: var(--color-ink);
   font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
 }
 
-/* Modo nocturno (clase .dark en <html>, la controla SiteExperience). */
-.dark body {
-  background: #09090b;
-  color: #f4f4f5;
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
-.dark .bg-white { background-color: #18181b; }
-.dark .bg-neutral-50 { background-color: #09090b; }
-.dark .bg-neutral-100 { background-color: #27272a; }
-.dark .bg-sky-50, .dark .bg-brand-50 { background-color: #082f49; }
-.dark .text-neutral-950, .dark .text-neutral-900 { color: #fafafa; }
-.dark .text-neutral-700, .dark .text-neutral-600, .dark .text-neutral-500 { color: #a1a1aa; }
-.dark .border-neutral-200, .dark .border-neutral-300 { border-color: #3f3f46; }
+::selection {
+  background: var(--color-accent-200);
+  color: var(--color-ink);
+}
+
+/* Modo nocturno (`data-theme="dark"` en <html>, lo controla SiteExperience).
+   Mismos roles, valores invertidos: las utilidades de Tailwind leen estas
+   variables, así que ningún componente necesita clases dark:*. */
+[data-theme="dark"] {
+  --color-bg: #14161b;
+  --color-surface: #1f232a;
+  --color-surface-2: #23272e;
+  --color-ink: #f2f3f6;
+  --color-muted: #b6bac2;
+  --color-faint: #767b84;
+  --color-accent: #4b74e8;
+  --color-accent-hover: #8fa8f5;
+  --color-accent-press: #8fa8f5; /* texto de acento sobre fondo oscuro */
+  --color-accent-fg: #14161b;
+  --color-accent-100: #101b40;
+  --color-accent-200: #0a2168;
+  --color-accent-300: #0e2f8f;
+  --color-rule: rgba(242, 243, 246, 0.4);
+  --color-rule-soft: rgba(242, 243, 246, 0.16);
+  --color-band: #23272e;
+  --color-band-fg: #f2f3f6;
+  --color-neutral-200: #23272e;
+  --color-neutral-400: #3f434b;
+  --color-neutral-800: #d3d7de;
+  --color-neutral-950: #f2f3f6;
+  color-scheme: dark;
+}

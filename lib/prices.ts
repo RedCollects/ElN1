@@ -12,7 +12,7 @@ export const OUTBID_FACTOR = 1.1;
 export function getInitialPrice(position: number): number {
   const pricedPosition = Math.min(
     Math.max(position, 1),
-    INITIAL_PRICE_POSITION_COUNT
+    INITIAL_PRICE_POSITION_COUNT,
   );
 
   return (INITIAL_PRICE_POSITION_COUNT - pricedPosition + 1) * 10;
@@ -23,12 +23,15 @@ export const INITIAL_PRICES: Record<number, number> = Object.fromEntries(
   Array.from({ length: MAX_RANKING_POSITION }, (_, index) => [
     index + 1,
     getInitialPrice(index + 1),
-  ])
+  ]),
 );
 
-export function isValidPosition(position: number): boolean {
+export function isValidPosition(position: number | null | undefined): boolean {
   return (
-    Number.isInteger(position) && position >= 1 && position <= MAX_RANKING_POSITION
+    typeof position === "number" &&
+    Number.isInteger(position) &&
+    position >= 1 &&
+    position <= MAX_RANKING_POSITION
   );
 }
 
@@ -39,13 +42,24 @@ export function isValidPosition(position: number): boolean {
  */
 export function getMinimumOffer(
   position: number,
-  currentPrice: number | null | undefined
+  currentPrice: number | null | undefined,
 ): number {
   const price = Number(currentPrice);
 
-  return currentPrice === null || currentPrice === undefined || !Number.isFinite(price)
-    ? getInitialPrice(position)
-    : Math.ceil(price * OUTBID_FACTOR);
+  if (
+    currentPrice === null ||
+    currentPrice === undefined ||
+    !Number.isFinite(price)
+  ) {
+    return getInitialPrice(position);
+  }
+
+  // Redondear a centavos antes de `ceil`: en coma flotante 100 * 1.1 da
+  // 110.00000000000001 y `ceil` lo subiría a 111, mientras que `settle_bid`
+  // (numeric exacto en Postgres) calcula 110.
+  const cents = Math.round(price * OUTBID_FACTOR * 100);
+
+  return Math.ceil(cents / 100);
 }
 
 export const minimumOfferFor = getMinimumOffer;
