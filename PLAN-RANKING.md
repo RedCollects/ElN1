@@ -143,6 +143,10 @@ Superar a Ana cuesta $121; superar al #1 cuesta ceil(121×1.1) = $134.
   cliente, tablas `businesses` y `bids` con RLS de solo lectura) + polling
   de respaldo; alerta en el modal cuando cambia la posición reservada.
 - `/como-funciona` y `/terminos`: reglas nuevas + nota de IVA/factura.
+  **Regla permanente:** cada PR que cambie precios, posiciones, reservas o
+  anuncio grande debe actualizar `/como-funciona` en el mismo PR (los textos
+  leen las constantes de `lib/prices.ts` y `lib/business.ts`, pero las
+  reglas escritas hay que revisarlas a mano).
 - `/admin`: tabla de historial de ofertas (Server Action, sin endpoint).
 
 ### 4.3 Verificación
@@ -172,4 +176,4 @@ aprovechar los tests y CI.
 4. Base plana $100 sin escalón para el top → **sí**: para que se abra el
    último puesto ya se compraron todos los demás.
 
-Pendiente solo el visto bueno del primer dev antes de implementar.
+Plan **aprobado por el segundo dev el 2026-08-30**; se implementa en `ranking/modelo-secuencial`.
