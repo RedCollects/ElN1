@@ -97,8 +97,17 @@ export function SealImage({ size, color, ring = true }: SealImageProps) {
   );
 }
 
-/** Icono de app: el mismo sello del logo, tinta sobre fondo claro. Radio 0. */
-export function AppIcon({ size }: { size: number }) {
+/**
+ * Icono de app: el mismo sello del logo en tinta. Sin fondo (favicon) o sobre
+ * el fondo claro (iOS no admite transparencia). Radio 0.
+ */
+export function AppIcon({
+  size,
+  background = "transparent",
+}: {
+  size: number;
+  background?: "transparent" | "bg";
+}) {
   return (
     <div
       style={{
@@ -107,10 +116,10 @@ export function AppIcon({ size }: { size: number }) {
         justifyContent: "center",
         width: "100%",
         height: "100%",
-        background: BRAND.bg,
+        background: background === "bg" ? BRAND.bg : "transparent",
       }}
     >
-      <SealImage size={Math.round(size * 0.92)} color={BRAND.ink} />
+      <SealImage size={Math.round(size * 0.96)} color={BRAND.ink} />
     </div>
   );
 }

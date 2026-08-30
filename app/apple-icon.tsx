@@ -6,7 +6,7 @@ export const contentType = "image/png";
 
 /** Icono para pantalla de inicio en iOS. */
 export default async function AppleIcon() {
-  return new ImageResponse(<AppIcon size={size.width} />, {
+  return new ImageResponse(<AppIcon size={size.width} background="bg" />, {
     ...size,
     fonts: await loadBrandFonts(),
   });
