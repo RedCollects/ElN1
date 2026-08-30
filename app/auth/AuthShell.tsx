@@ -14,7 +14,7 @@ export default function AuthShell({ title, subtitle, children }: Props) {
       <Card padding="lg" elevated className="w-full max-w-sm">
         <Link
           href="/"
-          className="text-sm font-bold uppercase tracking-widest text-brand-500"
+          className="text-accent-press text-sm font-bold tracking-widest uppercase"
         >
           EL N1
         </Link>

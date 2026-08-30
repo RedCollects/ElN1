@@ -33,7 +33,7 @@ export default async function AdminPage({
         <div className="mx-auto flex max-w-6xl items-start justify-between gap-4 px-6 py-5">
           <div>
             <h1 className="text-2xl font-black">
-              EL <span className="text-sky-400">N1</span>
+              EL <span className="text-accent-press">N1</span>
             </h1>
             <p className="text-sm text-neutral-500">Panel administrador</p>
           </div>
@@ -52,12 +52,12 @@ export default async function AdminPage({
         </p>
 
         {updated && (
-          <p className="mt-6 rounded-xl bg-emerald-50 px-4 py-3 font-medium text-emerald-700">
+          <p className="mt-6 bg-emerald-50 px-4 py-3 font-medium text-emerald-700">
             Cambios guardados.
           </p>
         )}
         {updateError && (
-          <p className="mt-6 rounded-xl bg-red-50 px-4 py-3 font-medium text-red-700">
+          <p className="mt-6 bg-red-50 px-4 py-3 font-medium text-red-700">
             {updateError}
           </p>
         )}
@@ -72,7 +72,7 @@ export default async function AdminPage({
           {(businesses ?? []).map((business) => (
             <details
               key={business.id}
-              className="rounded-2xl border border-neutral-200 bg-white p-6"
+              className="border border-neutral-200 bg-white p-6"
             >
               <summary className="flex cursor-pointer list-none items-center justify-between gap-5">
                 <div className="min-w-0">
@@ -89,7 +89,7 @@ export default async function AdminPage({
                 </div>
                 <div className="shrink-0 text-right">
                   <p className="text-sm text-neutral-400">Oferta actual</p>
-                  <p className="text-xl font-black text-sky-500">
+                  <p className="text-accent-press text-xl font-black">
                     $
                     {Number(business.current_price ?? 0).toLocaleString(
                       "es-MX",
@@ -113,7 +113,7 @@ export default async function AdminPage({
                       name="name"
                       maxLength={120}
                       defaultValue={business.name}
-                      className="mt-2 w-full rounded-xl border border-neutral-300 px-3 py-2.5 font-normal"
+                      className="mt-2 w-full border border-neutral-300 px-3 py-2.5 font-normal"
                     />
                   </label>
                   <label className="text-sm font-bold">
@@ -125,7 +125,7 @@ export default async function AdminPage({
                       maxLength={60}
                       defaultValue={business.category ?? ""}
                       placeholder="Elige o escribe una nueva"
-                      className="mt-2 w-full rounded-xl border border-neutral-300 px-3 py-2.5 font-normal"
+                      className="mt-2 w-full border border-neutral-300 px-3 py-2.5 font-normal"
                     />
                   </label>
                   <label className="text-sm font-bold sm:col-span-2">
@@ -135,7 +135,7 @@ export default async function AdminPage({
                       maxLength={1500}
                       defaultValue={business.description ?? ""}
                       rows={4}
-                      className="mt-2 w-full resize-y rounded-xl border border-neutral-300 px-3 py-2.5 font-normal"
+                      className="mt-2 w-full resize-y border border-neutral-300 px-3 py-2.5 font-normal"
                     />
                   </label>
                   <label className="text-sm font-bold">
@@ -144,7 +144,7 @@ export default async function AdminPage({
                       name="phone"
                       maxLength={30}
                       defaultValue={business.phone ?? ""}
-                      className="mt-2 w-full rounded-xl border border-neutral-300 px-3 py-2.5 font-normal"
+                      className="mt-2 w-full border border-neutral-300 px-3 py-2.5 font-normal"
                     />
                   </label>
                   <label className="text-sm font-bold">
@@ -154,7 +154,7 @@ export default async function AdminPage({
                       maxLength={30}
                       defaultValue={business.whatsapp ?? ""}
                       placeholder="5216621234567"
-                      className="mt-2 w-full rounded-xl border border-neutral-300 px-3 py-2.5 font-normal"
+                      className="mt-2 w-full border border-neutral-300 px-3 py-2.5 font-normal"
                     />
                   </label>
                   <label className="text-sm font-bold">
@@ -164,7 +164,7 @@ export default async function AdminPage({
                       type="url"
                       defaultValue={business.website ?? ""}
                       placeholder="https://ejemplo.mx"
-                      className="mt-2 w-full rounded-xl border border-neutral-300 px-3 py-2.5 font-normal"
+                      className="mt-2 w-full border border-neutral-300 px-3 py-2.5 font-normal"
                     />
                   </label>
                   <label className="text-sm font-bold">
@@ -174,7 +174,7 @@ export default async function AdminPage({
                       type="url"
                       defaultValue={business.logo_url ?? ""}
                       placeholder="https://..."
-                      className="mt-2 w-full rounded-xl border border-neutral-300 px-3 py-2.5 font-normal"
+                      className="mt-2 w-full border border-neutral-300 px-3 py-2.5 font-normal"
                     />
                   </label>
                   <label className="text-sm font-bold">
@@ -184,7 +184,7 @@ export default async function AdminPage({
                       type="url"
                       defaultValue={business.instagram ?? ""}
                       placeholder="https://instagram.com/..."
-                      className="mt-2 w-full rounded-xl border border-neutral-300 px-3 py-2.5 font-normal"
+                      className="mt-2 w-full border border-neutral-300 px-3 py-2.5 font-normal"
                     />
                   </label>
                   <label className="text-sm font-bold">
@@ -194,7 +194,7 @@ export default async function AdminPage({
                       type="url"
                       defaultValue={business.facebook ?? ""}
                       placeholder="https://facebook.com/..."
-                      className="mt-2 w-full rounded-xl border border-neutral-300 px-3 py-2.5 font-normal"
+                      className="mt-2 w-full border border-neutral-300 px-3 py-2.5 font-normal"
                     />
                   </label>
                   <label className="text-sm font-bold">
@@ -204,11 +204,11 @@ export default async function AdminPage({
                       type="url"
                       defaultValue={business.tiktok ?? ""}
                       placeholder="https://tiktok.com/@..."
-                      className="mt-2 w-full rounded-xl border border-neutral-300 px-3 py-2.5 font-normal"
+                      className="mt-2 w-full border border-neutral-300 px-3 py-2.5 font-normal"
                     />
                   </label>
                   <div className="flex items-end">
-                    <button className="w-full rounded-xl bg-sky-400 px-5 py-3 font-bold text-white transition hover:bg-sky-500">
+                    <button className="bg-accent hover:bg-accent-hover w-full px-5 py-3 font-bold text-white transition">
                       Guardar perfil
                     </button>
                   </div>
@@ -221,7 +221,7 @@ export default async function AdminPage({
                     name="active"
                     value={String(!business.active)}
                   />
-                  <button className="text-sm font-bold text-sky-600 underline">
+                  <button className="text-accent-press text-sm font-bold underline">
                     {business.active ? "Desactivar negocio" : "Activar negocio"}
                   </button>
                 </form>
@@ -231,7 +231,7 @@ export default async function AdminPage({
         </div>
 
         {(!businesses || businesses.length === 0) && (
-          <div className="mt-6 rounded-2xl border border-neutral-200 bg-white p-8 text-center text-neutral-500">
+          <div className="mt-6 border border-neutral-200 bg-white p-8 text-center text-neutral-500">
             No hay negocios registrados.
           </div>
         )}

@@ -22,8 +22,8 @@ export function BusinessAd({ business, profileHref }: Props) {
     .join(" · ");
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
-      <div className="from-brand to-brand-600 relative aspect-[16/7] w-full bg-gradient-to-br">
+    <div className="overflow-hidden border border-neutral-200 bg-white">
+      <div className="from-accent to-accent-press relative aspect-[16/7] w-full bg-gradient-to-br">
         {business.cover_url && (
           <SmartImage
             src={business.cover_url}

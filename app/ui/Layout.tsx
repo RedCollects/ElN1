@@ -11,11 +11,23 @@ const WIDTHS: Record<Width, string> = {
   form: "max-w-sm",
 };
 
-type ContainerProps = { width?: Width; className?: string; children: ReactNode };
+type ContainerProps = {
+  width?: Width;
+  className?: string;
+  children: ReactNode;
+};
 
 /** Centra el contenido con el ancho estándar y el padding lateral de la app. */
-export function Container({ width = "wide", className, children }: ContainerProps) {
-  return <div className={cn("mx-auto w-full px-6", WIDTHS[width], className)}>{children}</div>;
+export function Container({
+  width = "wide",
+  className,
+  children,
+}: ContainerProps) {
+  return (
+    <div className={cn("mx-auto w-full px-6", WIDTHS[width], className)}>
+      {children}
+    </div>
+  );
 }
 
 type PageShellProps = {
@@ -40,7 +52,7 @@ export function PageShell({
         "flex min-h-screen flex-1 flex-col text-neutral-900",
         tone === "white" ? "bg-white" : "bg-neutral-50",
         centered && "items-center justify-center px-6 py-12",
-        className
+        className,
       )}
     >
       {children}
@@ -49,11 +61,20 @@ export function PageShell({
 }
 
 /** Marca "EL N1". Con `href={null}` no es enlace. */
-export function Logo({ href = "/", className }: { href?: string | null; className?: string }) {
-  const classes = cn("text-2xl font-black tracking-tight text-neutral-950", className);
+export function Logo({
+  href = "/",
+  className,
+}: {
+  href?: string | null;
+  className?: string;
+}) {
+  const classes = cn(
+    "text-2xl font-black tracking-tight text-neutral-950",
+    className,
+  );
   const mark = (
     <>
-      EL <span className="text-brand">N1</span>
+      EL <span className="text-accent">N1</span>
     </>
   );
 
@@ -84,7 +105,9 @@ export function SiteHeader({ children, subtitle }: SiteHeaderProps) {
         </div>
 
         {children && (
-          <nav className="flex items-center gap-2 text-sm font-medium">{children}</nav>
+          <nav className="flex items-center gap-2 text-sm font-medium">
+            {children}
+          </nav>
         )}
       </Container>
     </header>
@@ -116,18 +139,27 @@ type EmptyStateProps = {
 };
 
 /** Mensaje centrado para páginas vacías o con error. */
-export function EmptyState({ title, tone = "neutral", action, children }: EmptyStateProps) {
+export function EmptyState({
+  title,
+  tone = "neutral",
+  action,
+  children,
+}: EmptyStateProps) {
   return (
     <div className="mx-auto max-w-md text-center">
       <h1
         className={cn(
           "text-3xl font-black",
-          tone === "error" ? "text-red-600" : "text-neutral-950"
+          tone === "error" ? "text-red-600" : "text-neutral-950",
         )}
       >
         {title}
       </h1>
-      {children && <div className="mt-3 text-sm leading-6 text-neutral-500">{children}</div>}
+      {children && (
+        <div className="mt-3 text-sm leading-6 text-neutral-500">
+          {children}
+        </div>
+      )}
       {action && <div className="mt-6">{action}</div>}
     </div>
   );

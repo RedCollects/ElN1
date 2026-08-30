@@ -206,7 +206,7 @@ export default async function Home({
 
         <Heading as="h1" size="display" className="mx-auto max-w-4xl">
           Tu negocio merece
-          <span className="text-brand block">estar arriba.</span>
+          <span className="text-accent block">estar arriba.</span>
         </Heading>
 
         <Lead className="mx-auto mt-6 max-w-2xl">
@@ -214,7 +214,7 @@ export default async function Home({
           decides hasta dónde subir.
         </Lead>
 
-        <div className="mx-auto mt-8 grid max-w-3xl grid-cols-3 divide-x divide-neutral-200 rounded-2xl border border-neutral-200 bg-neutral-50 py-4 text-left">
+        <div className="mx-auto mt-8 grid max-w-3xl grid-cols-3 divide-x divide-neutral-200 border border-neutral-200 bg-neutral-50 py-4 text-left">
           <div className="px-5">
             <p className="text-xs tracking-wider text-neutral-400 uppercase">
               Ranking
@@ -244,7 +244,7 @@ export default async function Home({
           initialPosition={Number(position) || null}
         />
 
-        <aside className="mx-6 mb-14 h-fit rounded-3xl border border-neutral-200 bg-neutral-50 p-6 lg:sticky lg:top-6">
+        <aside className="mx-6 mb-14 h-fit border border-neutral-200 bg-neutral-50 p-6 lg:sticky lg:top-6">
           <Eyebrow size="xs">Leaderboard</Eyebrow>
           <h2 className="mt-2 text-xl font-black">Más visitados</h2>
           <p className="mt-1 text-sm text-neutral-500">
@@ -254,7 +254,7 @@ export default async function Home({
             {attentionLeaderboard.length > 0 ? (
               attentionLeaderboard.map((business, index) => (
                 <li key={business.id} className="flex items-center gap-3">
-                  <span className="text-brand-500 w-5 text-sm font-black">
+                  <span className="text-accent-press w-5 text-sm font-black">
                     {index + 1}
                   </span>
                   <div className="min-w-0 flex-1">

@@ -33,12 +33,17 @@ export function Modal({ onClose, eyebrow, title, children }: ModalProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-7 shadow-2xl"
+        className="max-h-[90vh] w-full max-w-md overflow-y-auto bg-white p-7 shadow-2xl"
       >
         <div className="flex items-start justify-between gap-4">
           <div>
-            {eyebrow && <Eyebrow className="tracking-widest">{eyebrow}</Eyebrow>}
-            <h2 id={titleId} className="mt-2 text-3xl font-black text-neutral-950">
+            {eyebrow && (
+              <Eyebrow className="tracking-widest">{eyebrow}</Eyebrow>
+            )}
+            <h2
+              id={titleId}
+              className="mt-2 text-3xl font-black text-neutral-950"
+            >
               {title}
             </h2>
           </div>

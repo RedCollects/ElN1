@@ -25,7 +25,11 @@ export function trackBusinessClick(businessId: string) {
   }).catch(() => undefined);
 }
 
-export default function SiteExperience({ initialStats }: { initialStats: Stats }) {
+export default function SiteExperience({
+  initialStats,
+}: {
+  initialStats: Stats;
+}) {
   const [stats, setStats] = useState(initialStats);
   const [dark, setDark] = useState(false);
 
@@ -33,7 +37,8 @@ export default function SiteExperience({ initialStats }: { initialStats: Stats }
     const savedTheme = window.localStorage.getItem("eln1-theme");
     const useDark =
       savedTheme === "dark" ||
-      (!savedTheme && window.matchMedia("(prefers-color-scheme: dark)").matches);
+      (!savedTheme &&
+        window.matchMedia("(prefers-color-scheme: dark)").matches);
 
     document.documentElement.classList.toggle("dark", useDark);
     const themeFrame = window.requestAnimationFrame(() => setDark(useDark));
@@ -70,9 +75,15 @@ export default function SiteExperience({ initialStats }: { initialStats: Stats }
 
   return (
     <div className="flex items-center gap-3 text-xs font-medium text-neutral-500 dark:text-neutral-400">
-      <span className="lg:hidden"><b className="text-emerald-500">●</b> {stats.online.toLocaleString("es-MX")}</span>
+      <span className="lg:hidden">
+        <b className="text-emerald-500">●</b>{" "}
+        {stats.online.toLocaleString("es-MX")}
+      </span>
       <div className="hidden items-center gap-3 lg:flex">
-        <span><b className="text-emerald-500">●</b> {stats.online.toLocaleString("es-MX")} en línea</span>
+        <span>
+          <b className="text-emerald-500">●</b>{" "}
+          {stats.online.toLocaleString("es-MX")} en línea
+        </span>
         <span>{stats.today.toLocaleString("es-MX")} visitas hoy</span>
         <span>{stats.total.toLocaleString("es-MX")} históricas</span>
       </div>
@@ -80,7 +91,7 @@ export default function SiteExperience({ initialStats }: { initialStats: Stats }
         type="button"
         onClick={toggleTheme}
         aria-label={dark ? "Activar modo claro" : "Activar modo nocturno"}
-        className="rounded-full border border-neutral-200 px-3 py-2 text-sm transition hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800"
+        className="border border-neutral-200 px-3 py-2 text-sm transition hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800"
       >
         {dark ? "☀️" : "🌙"}
       </button>

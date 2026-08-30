@@ -150,9 +150,9 @@ export default function ComoFuncionaPage() {
               {STEPS.map((step, index) => (
                 <li
                   key={step.title}
-                  className="flex gap-5 rounded-2xl border border-neutral-200 p-5"
+                  className="flex gap-5 border border-neutral-200 p-5"
                 >
-                  <div className="bg-brand flex h-10 w-10 shrink-0 items-center justify-center rounded-xl font-black text-white">
+                  <div className="bg-accent flex h-10 w-10 shrink-0 items-center justify-center font-black text-white">
                     {index + 1}
                   </div>
 
@@ -177,7 +177,7 @@ export default function ComoFuncionaPage() {
               oferta mínima es un {OUTBID_PERCENT} % más que la oferta actual.
             </Muted>
 
-            <div className="mt-6 overflow-x-auto rounded-2xl border border-neutral-200">
+            <div className="mt-6 overflow-x-auto border border-neutral-200">
               <table className="w-full text-left text-sm">
                 <thead className="bg-neutral-50 text-xs font-bold tracking-wider text-neutral-400 uppercase">
                   <tr>
@@ -189,7 +189,7 @@ export default function ComoFuncionaPage() {
                   {positions.map((position) => (
                     <tr key={position} className="border-t border-neutral-100">
                       <td className="px-5 py-3 font-bold">#{position}</td>
-                      <td className="text-brand-500 px-5 py-3 text-right font-bold">
+                      <td className="text-accent-press px-5 py-3 text-right font-bold">
                         {formatPrice(INITIAL_PRICES[position])}
                       </td>
                     </tr>
@@ -198,7 +198,7 @@ export default function ComoFuncionaPage() {
                     <td className="px-5 py-3 font-bold">
                       #{PRICED_POSITIONS + 1} a #{MAX_RANKING_POSITION}
                     </td>
-                    <td className="text-brand-500 px-5 py-3 text-right font-bold">
+                    <td className="text-accent-press px-5 py-3 text-right font-bold">
                       {formatPrice(INITIAL_PRICES[MAX_RANKING_POSITION])}
                     </td>
                   </tr>

@@ -75,7 +75,7 @@ export function ImageUploader({ kind, currentUrl, onPreview }: Props) {
 
       <div
         className={cn(
-          "relative mt-3 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-100",
+          "relative mt-3 overflow-hidden border border-neutral-200 bg-neutral-100",
           aspectClassName,
         )}
       >
@@ -97,7 +97,7 @@ export function ImageUploader({ kind, currentUrl, onPreview }: Props) {
       </div>
 
       {localPreview && (
-        <p className="text-brand-600 mt-2 text-xs">
+        <p className="text-accent-press mt-2 text-xs">
           Así se recortará. Pulsa «Subir» para guardarla.
         </p>
       )}
@@ -112,7 +112,7 @@ export function ImageUploader({ kind, currentUrl, onPreview }: Props) {
           name="file"
           accept={ACCEPTED_IMAGE_TYPES.join(",")}
           onChange={handleFileChange}
-          className="block text-sm text-neutral-500 file:mr-3 file:rounded-full file:border-0 file:bg-neutral-900 file:px-4 file:py-2 file:text-xs file:font-bold file:text-white"
+          className="file: block text-sm text-neutral-500 file:mr-3 file:border-0 file:bg-neutral-900 file:px-4 file:py-2 file:text-xs file:font-bold file:text-white"
         />
 
         <Button

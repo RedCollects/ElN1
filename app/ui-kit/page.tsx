@@ -29,7 +29,13 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-function Block({ title, children }: { title: string; children: React.ReactNode }) {
+function Block({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className="mt-12">
       <Heading as="h2" size="md">
@@ -60,12 +66,13 @@ export default function UiKitPage() {
           UI kit
         </Heading>
         <Muted className="mt-2">
-          Todas las primitivas con sus variantes. Ver `app/ui/README.md` para el uso.
+          Todas las primitivas con sus variantes. Ver `app/ui/README.md` para el
+          uso.
         </Muted>
 
         <Block title="Tipografía">
           <Card>
-            <Eyebrow>Eyebrow brand · sm</Eyebrow>
+            <Eyebrow>Eyebrow accent · sm</Eyebrow>
             <Eyebrow size="xs" tone="muted" className="mt-2">
               Eyebrow muted · xs
             </Eyebrow>
@@ -84,7 +91,9 @@ export default function UiKitPage() {
             <Heading as="h3" size="sm">
               Heading sm
             </Heading>
-            <Lead className="mt-4">Lead: párrafo introductorio grande bajo un título.</Lead>
+            <Lead className="mt-4">
+              Lead: párrafo introductorio grande bajo un título.
+            </Lead>
             <Muted className="mt-2">Muted: texto secundario pequeño.</Muted>
             <p className="mt-4 flex flex-wrap items-baseline gap-4">
               <Price value={1500} size="sm" />
@@ -109,10 +118,10 @@ export default function UiKitPage() {
               <Button size="sm">Small (pill)</Button>
               <Button size="md">Medium</Button>
               <Button size="lg">Large</Button>
-              <Button size="sm" shape="rounded" variant="accent">
-                Small rounded
+              <Button size="sm" variant="accent">
+                Small
               </Button>
-              <Button size="md" shape="pill" variant="outline">
+              <Button size="md" variant="outline">
                 Medium pill
               </Button>
             </div>
@@ -125,7 +134,10 @@ export default function UiKitPage() {
         </Block>
 
         <Block title="Formularios">
-          <CardSection title="CardSection" description="Descripción de la sección.">
+          <CardSection
+            title="CardSection"
+            description="Descripción de la sección."
+          >
             <div className="grid gap-5 sm:grid-cols-2">
               <Field label="Input" hint="Texto de ayuda.">
                 <Input placeholder="Escribe algo" />

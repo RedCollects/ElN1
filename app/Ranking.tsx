@@ -212,8 +212,8 @@ export default function Ranking({
               onClick={() => setActiveCategory(category)}
               className={
                 activeCategory === category
-                  ? "shrink-0 rounded-full bg-neutral-950 px-4 py-2 text-sm font-bold text-white"
-                  : "hover:border-brand-300 shrink-0 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-bold text-neutral-600 transition"
+                  ? "shrink-0 bg-neutral-950 px-4 py-2 text-sm font-bold text-white"
+                  : "hover:border-accent-300 shrink-0 border border-neutral-200 bg-white px-4 py-2 text-sm font-bold text-neutral-600 transition"
               }
             >
               {category}
@@ -313,7 +313,7 @@ export default function Ranking({
             </p>
           ) : (
             <>
-              <div className="bg-brand-50 mt-6 rounded-2xl p-5">
+              <div className="bg-accent-100 mt-6 p-5">
                 {selectedBusiness && (
                   <>
                     <Muted>
@@ -322,7 +322,7 @@ export default function Ranking({
                     <p className="mt-1">
                       <Price value={selectedBusiness.current_price} />
                     </p>
-                    <div className="bg-brand-100 my-4 h-px" />
+                    <div className="bg-accent-200 my-4 h-px" />
                   </>
                 )}
 

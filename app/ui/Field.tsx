@@ -3,7 +3,7 @@ import { cn } from "./cn";
 
 /** Clases base de cualquier control de formulario. */
 export const controlClassName =
-  "mt-1 w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-brand disabled:opacity-50";
+  "mt-1 w-full border border-neutral-300 bg-white px-4 py-3 outline-none transition focus:border-accent disabled:opacity-50";
 
 export function Input({ className, ...props }: ComponentProps<"input">) {
   return <input {...props} className={cn(controlClassName, className)} />;
@@ -23,16 +23,23 @@ type PrefixedInputProps = ComponentProps<"input"> & {
 };
 
 /** Input con un prefijo visual dentro del mismo borde (usuario de redes). */
-export function PrefixedInput({ prefix, className, ...props }: PrefixedInputProps) {
+export function PrefixedInput({
+  prefix,
+  className,
+  ...props
+}: PrefixedInputProps) {
   return (
     <div
       className={cn(
-        "mt-1 flex items-center rounded-xl border border-neutral-300 bg-white transition focus-within:border-brand",
-        className
+        "focus-within:border-accent mt-1 flex items-center border border-neutral-300 bg-white transition",
+        className,
       )}
     >
       <span className="pl-4 text-neutral-400">{prefix}</span>
-      <input {...props} className="w-full rounded-xl bg-transparent px-2 py-3 outline-none" />
+      <input
+        {...props}
+        className="w-full bg-transparent px-2 py-3 outline-none"
+      />
     </div>
   );
 }
@@ -52,7 +59,9 @@ export function Field({ label, hint, className, children }: FieldProps) {
       {label}
       {children}
       {hint && (
-        <span className="mt-1 block text-xs font-normal text-neutral-400">{hint}</span>
+        <span className="mt-1 block text-xs font-normal text-neutral-400">
+          {hint}
+        </span>
       )}
     </label>
   );

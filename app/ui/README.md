@@ -11,19 +11,41 @@ Catálogo visual en desarrollo: `http://localhost:3000/ui-kit`.
 
 ## Tokens (`app/globals.css`)
 
-| Token | Uso |
-| --- | --- |
-| `brand` / `brand-400` | Color de marca (sky). Botones `accent`, acentos del logo. |
-| `brand-500` | Texto de marca sobre blanco (eyebrows, precios, enlaces) y hover de `accent`. |
-| `brand-50` / `brand-100` / `brand-200` | Fondos y bordes suaves (avisos `info`, caja de oferta). |
-| `brand-600` / `brand-900` | Degradados y texto sobre fondos `brand-50`. |
+Marca **v2 Azul** (handoff en `../branding/`). Los valores viven una sola vez en
+`@theme`; en el código solo se usan como clases.
 
-Escala neutra: `neutral-950` títulos, `neutral-900` texto, `neutral-500` secundario,
-`neutral-400` terciario, `neutral-200/300` bordes, `neutral-50` fondo de paneles.
+| Token | Clase | Uso |
+| --- | --- | --- |
+| `accent` #1746D4 | `bg-accent`, `text-accent-fg` | Acción primaria, posición #1, fila propia, estado en vivo. Como texto solo en cifras grandes (≥ 24px). |
+| `accent-hover` #1239B0 | `hover:bg-accent-hover` | Hover del botón primario. |
+| `accent-press` #0E2F8F | `text-accent-press`, `active:bg-accent-press` | Pressed y **todo texto corrido en azul** (contraste AA). |
+| `accent-100…900` | `bg-accent-200`, … | Rampa. `accent-200` = fondo de tags "disponible"/"sube" y `::selection`. |
+| `bg` #F2F3F6 | `bg-bg` | Fondo de toda la app. |
+| `surface` #E7E9EF · `surface-2` #F5F7FA | `bg-surface`, `bg-surface-2` | Tarjetas, campos, skeletons · hover de fila. |
+| `ink` #1B1D22 | `text-ink` | Texto principal. |
+| `muted` #5B6069 · `faint` #95999F | `text-muted`, `text-faint` | Secundario · etiquetas y valores vacíos. |
+| `rule` / `rule-soft` | `rule`, `rule-soft` (+ `border-t`, `border-b`…) | Regla fuerte de 2px entre secciones · 1px solo en filas internas. |
+| `band` / `band-fg` | `bg-band text-band-fg` | Bandas de tinta: header de tabla, prefijo `$`. |
+| `neutral-100…950` | `text-neutral-800`, … | Rampa neutra del handoff (sustituye a la de Tailwind). |
+| `shadow-modal` | `shadow-modal` | Única sombra permitida: diálogos. |
 
-Estados: `emerald` éxito, `amber` aviso, `red` error.
+Utilidades de texto: `figure` (900 / -0.03em / `tabular-nums`, para cifras) y
+`label` (11px / 700 / 0.12em / mayúsculas).
 
-Radios: `rounded-full` botones pequeños y badges · `rounded-xl` controles y CTAs · `rounded-2xl` tarjetas y avisos · `rounded-3xl` modal y página pública.
+Tipografía: **Archivo** (única familia, pesos 400–900) vía `next/font` en `app/layout.tsx`.
+
+### Reglas de la identidad
+
+1. **Radio 0 en todo.** Todos los `--radius-*` valen 0 y no se escribe `rounded-*`. La
+   única excepción es el sello circular del logo.
+2. **Reglas de 2px** (`rule`) para separar secciones; 1px (`rule-soft`) solo dentro de
+   tablas y listas.
+3. **Todo al ras izquierdo**, incluido el label dentro de botones anchos. Nunca centrar.
+4. **El azul con moderación**: acción primaria, posición #1, fila propia, en vivo. Sin
+   fondos azules extensos salvo la tarjeta del líder.
+5. **Cifras siempre `figure`** (`tabular-nums`) para que no salten al actualizar.
+6. **Sin emojis ni colores semánticos** (verde/ámbar/rojo). Iconos: Lucide. Los errores
+   se marcan con texto en `accent-press` y borde `accent`.
 
 ## Componentes
 
@@ -37,8 +59,7 @@ Radios: `rounded-full` botones pequeños y badges · `rounded-xl` controles y CT
 ### Acciones
 - **`Button`** — `<button>` o `next/link` si tiene `href`.
   - `variant`: `primary` (negro, acciones de cuenta) · `accent` (marca, acciones de dinero/ranking) · `outline` · `ghost` · `link`.
-  - `size`: `sm` (píldora) · `md` · `lg` (CTA de ancho completo con `block`).
-  - `shape="pill" | "rounded"` para salirse del valor por defecto según tamaño.
+  - `size`: `sm` · `md` · `lg` (CTA de ancho completo con `block`).
 
 ### Formularios
 - **`Field`** — `label` + control hijo + `hint`.
@@ -62,6 +83,6 @@ Radios: `rounded-full` botones pequeños y badges · `rounded-xl` controles y CT
 ## Reglas
 
 1. Antes de escribir clases de Tailwind a mano, busca si ya existe el componente. Si un patrón se repite dos veces, súbelo aquí.
-2. El color de marca solo se escribe como `brand-*`; nunca `sky-*` directamente.
+2. El color de marca solo se escribe como `accent-*`; nunca un hex ni `sky-*`.
 3. Los componentes aceptan `className` para ajustes de posición (márgenes, ancho), no para cambiar su aspecto.
 4. Los componentes de dominio (tarjeta del ranking, anuncio, subida de imágenes) viven en `app/components/` o junto a su ruta y se construyen con estas primitivas.

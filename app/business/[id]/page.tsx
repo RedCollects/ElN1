@@ -57,8 +57,8 @@ export default async function BusinessPage({
       </SiteHeader>
 
       <Container width="content" className="py-12">
-        <div className="overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm">
-          <div className="bg-brand relative px-6 py-10 text-center">
+        <div className="overflow-hidden border border-neutral-200 bg-white shadow-sm">
+          <div className="bg-accent relative px-6 py-10 text-center">
             {item.cover_url && (
               <>
                 <SmartImage
@@ -119,7 +119,7 @@ export default async function BusinessPage({
             )}
 
             {item.position && (
-              <div className="bg-brand-50 rounded-2xl p-6">
+              <div className="bg-accent-100 p-6">
                 <Muted className="font-medium">Oferta actual</Muted>
                 <p className="mt-1">
                   <Price value={item.current_price} size="xl" />

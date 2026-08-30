@@ -14,19 +14,24 @@ type PriceProps = {
   value: number | string | null | undefined;
   size?: PriceSize;
   /** Color: marca (por defecto) o tinta neutra. */
-  tone?: "brand" | "ink";
+  tone?: "accent" | "ink";
   className?: string;
 };
 
 /** Cantidad en MXN con la tipografía de la app. */
-export function Price({ value, size = "md", tone = "brand", className }: PriceProps) {
+export function Price({
+  value,
+  size = "md",
+  tone = "accent",
+  className,
+}: PriceProps) {
   return (
     <span
       className={cn(
         "font-black",
         SIZES[size],
-        tone === "brand" ? "text-brand-500" : "text-neutral-950",
-        className
+        tone === "accent" ? "text-accent-press" : "text-neutral-950",
+        className,
       )}
     >
       {formatPrice(value)}

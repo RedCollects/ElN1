@@ -42,7 +42,7 @@ function ReservationNotice({
   return (
     <div
       role="status"
-      className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+      className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"
     >
       <span className="font-bold">
         🔒 Alguien reservó esta posición por {formatPrice(reservation.amount)}
@@ -71,7 +71,7 @@ export function RankingCard({
 
   if (!business) {
     return (
-      <div className="w-full rounded-2xl border-2 border-dashed border-neutral-300 bg-white p-5">
+      <div className="w-full border-2 border-dashed border-neutral-300 bg-white p-5">
         <div className="flex items-center gap-4">
           <Avatar
             src={null}
@@ -124,9 +124,9 @@ export function RankingCard({
   return (
     <div
       className={cn(
-        "w-full rounded-2xl border",
+        "w-full border",
         POSITION_STYLES[position] ?? "border-neutral-200 bg-white",
-        isOwn && "ring-brand-300 ring-2",
+        isOwn && "ring-accent-300 ring-2",
       )}
       onPointerEnter={(event) => {
         if (event.pointerType === "mouse") setHovered(true);

@@ -95,11 +95,10 @@ export default async function MyBusinessPage() {
                 href={`/business/${business.id}`}
                 variant="outline"
                 size="sm"
-                shape="rounded"
               >
                 Ver mi página pública
               </Button>
-              <Button href="/" variant="accent" size="sm" shape="rounded">
+              <Button href="/" variant="accent" size="sm">
                 Subir de posición
               </Button>
             </div>

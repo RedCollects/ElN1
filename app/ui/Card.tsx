@@ -19,14 +19,19 @@ type CardProps = {
 };
 
 /** Superficie blanca con borde y esquinas redondeadas. */
-export function Card({ padding = "md", elevated = false, className, children }: CardProps) {
+export function Card({
+  padding = "md",
+  elevated = false,
+  className,
+  children,
+}: CardProps) {
   return (
     <div
       className={cn(
-        "rounded-2xl border border-neutral-200 bg-white",
+        "border border-neutral-200 bg-white",
         PADDING[padding],
         elevated && "shadow-sm",
-        className
+        className,
       )}
     >
       {children}
@@ -42,11 +47,20 @@ type CardSectionProps = {
 };
 
 /** Tarjeta con título: bloques de un formulario largo. */
-export function CardSection({ title, description, className, children }: CardSectionProps) {
+export function CardSection({
+  title,
+  description,
+  className,
+  children,
+}: CardSectionProps) {
   return (
-    <section className={cn("rounded-2xl border border-neutral-200 bg-white p-6", className)}>
+    <section
+      className={cn("border border-neutral-200 bg-white p-6", className)}
+    >
       <h2 className="text-xl font-black">{title}</h2>
-      {description && <p className="mt-1 text-sm text-neutral-500">{description}</p>}
+      {description && (
+        <p className="mt-1 text-sm text-neutral-500">{description}</p>
+      )}
       <div className="mt-5">{children}</div>
     </section>
   );

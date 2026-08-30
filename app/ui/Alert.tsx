@@ -5,7 +5,7 @@ import { cn } from "./cn";
 export type Tone = "info" | "success" | "warning" | "error" | "neutral";
 
 const TONES: Record<Tone, string> = {
-  info: "border-brand-200 bg-brand-50 text-brand-900",
+  info: "border-accent-300 bg-accent-100 text-accent-press",
   success: "border-emerald-200 bg-emerald-50 text-emerald-900",
   warning: "border-amber-200 bg-amber-50 text-amber-900",
   error: "border-red-200 bg-red-50 text-red-900",
@@ -37,15 +37,21 @@ export function Alert({
       role={tone === "error" ? "alert" : "status"}
       className={cn(
         "flex items-start justify-between gap-4 border",
-        compact ? "rounded-xl px-4 py-3 text-sm" : "rounded-2xl p-5",
+        compact ? "px-4 py-3 text-sm" : "p-5",
         TONES[tone],
-        className
+        className,
       )}
     >
       <div className="min-w-0 flex-1">
-        {title && <p className={compact ? "font-bold" : "text-lg font-black"}>{title}</p>}
+        {title && (
+          <p className={compact ? "font-bold" : "text-lg font-black"}>
+            {title}
+          </p>
+        )}
         {children && (
-          <div className={cn("text-sm leading-6", Boolean(title) && "mt-1")}>{children}</div>
+          <div className={cn("text-sm leading-6", Boolean(title) && "mt-1")}>
+            {children}
+          </div>
         )}
       </div>
 
