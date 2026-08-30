@@ -22,9 +22,9 @@ export { Avatar } from "./Avatar";
 export {
   Container,
   PageShell,
-  Logo,
   SiteHeader,
   SiteFooter,
   EmptyState,
 } from "./Layout";
 export { Modal } from "./Modal";
+export { Logo, Seal, type SealTone } from "./Logo";

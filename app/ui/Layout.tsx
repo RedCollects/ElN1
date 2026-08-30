@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { cn } from "./cn";
+import { Logo } from "./Logo";
 
 type Width = "wide" | "content" | "narrow" | "form";
 
@@ -57,33 +58,6 @@ export function PageShell({
     >
       {children}
     </main>
-  );
-}
-
-/** Marca "EL N1". Con `href={null}` no es enlace. */
-export function Logo({
-  href = "/",
-  className,
-}: {
-  href?: string | null;
-  className?: string;
-}) {
-  const classes = cn(
-    "text-2xl font-black tracking-tight text-neutral-950",
-    className,
-  );
-  const mark = (
-    <>
-      EL <span className="text-accent">N1</span>
-    </>
-  );
-
-  return href ? (
-    <Link href={href} className={classes}>
-      {mark}
-    </Link>
-  ) : (
-    <div className={classes}>{mark}</div>
   );
 }
 

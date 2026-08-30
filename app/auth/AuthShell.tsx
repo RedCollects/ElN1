@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { Card, Heading, Muted, PageShell } from "@/app/ui";
+import { Card, Heading, Logo, Muted, PageShell } from "@/app/ui";
 
 type Props = {
   title: string;
@@ -12,12 +11,7 @@ export default function AuthShell({ title, subtitle, children }: Props) {
   return (
     <PageShell tone="muted" centered>
       <Card padding="lg" elevated className="w-full max-w-sm">
-        <Link
-          href="/"
-          className="text-accent-press text-sm font-bold tracking-widest uppercase"
-        >
-          EL N1
-        </Link>
+        <Logo size={28} />
         <Heading as="h1" className="mt-2">
           {title}
         </Heading>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "@/app/ui";
 
 export const metadata = {
   title: "Carta responsiva | EL N1",
@@ -10,9 +11,7 @@ export default function DisclaimerPage() {
     <main className="min-h-screen bg-neutral-50 text-neutral-900">
       <header className="border-b border-neutral-200 bg-white">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-5">
-          <Link href="/" className="text-2xl font-black tracking-tight">
-            EL <span className="text-accent-press">N1</span>
-          </Link>
+          <Logo />
           <Link href="/" className="text-sm font-bold text-neutral-500">
             Volver al ranking
           </Link>

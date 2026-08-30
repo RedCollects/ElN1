@@ -12,6 +12,7 @@ const archivo = Archivo({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.eln1.mx"),
   title: "EL N1 México | El ranking de negocios",
   description:
     "El ranking público donde los negocios mexicanos compiten por visibilidad.",

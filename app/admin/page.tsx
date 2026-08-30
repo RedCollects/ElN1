@@ -3,6 +3,7 @@ import { hasAdminSession } from "@/lib/admin-auth";
 import { createServerSupabaseClient } from "@/lib/supabase-server";
 import { BUSINESS_CATEGORIES } from "@/lib/categories";
 import { toggleBusinessActive, updateBusinessProfile } from "./actions";
+import { Logo } from "@/app/ui";
 
 export default async function AdminPage({
   searchParams,
@@ -32,8 +33,8 @@ export default async function AdminPage({
       <header className="border-b border-neutral-200 bg-white">
         <div className="mx-auto flex max-w-6xl items-start justify-between gap-4 px-6 py-5">
           <div>
-            <h1 className="text-2xl font-black">
-              EL <span className="text-accent-press">N1</span>
+            <h1>
+              <Logo href={null} />
             </h1>
             <p className="text-sm text-neutral-500">Panel administrador</p>
           </div>

@@ -14,20 +14,20 @@ Catálogo visual en desarrollo: `http://localhost:3000/ui-kit`.
 Marca **v2 Azul** (handoff en `../branding/`). Los valores viven una sola vez en
 `@theme`; en el código solo se usan como clases.
 
-| Token | Clase | Uso |
-| --- | --- | --- |
-| `accent` #1746D4 | `bg-accent`, `text-accent-fg` | Acción primaria, posición #1, fila propia, estado en vivo. Como texto solo en cifras grandes (≥ 24px). |
-| `accent-hover` #1239B0 | `hover:bg-accent-hover` | Hover del botón primario. |
-| `accent-press` #0E2F8F | `text-accent-press`, `active:bg-accent-press` | Pressed y **todo texto corrido en azul** (contraste AA). |
-| `accent-100…900` | `bg-accent-200`, … | Rampa. `accent-200` = fondo de tags "disponible"/"sube" y `::selection`. |
-| `bg` #F2F3F6 | `bg-bg` | Fondo de toda la app. |
-| `surface` #E7E9EF · `surface-2` #F5F7FA | `bg-surface`, `bg-surface-2` | Tarjetas, campos, skeletons · hover de fila. |
-| `ink` #1B1D22 | `text-ink` | Texto principal. |
-| `muted` #5B6069 · `faint` #95999F | `text-muted`, `text-faint` | Secundario · etiquetas y valores vacíos. |
-| `rule` / `rule-soft` | `rule`, `rule-soft` (+ `border-t`, `border-b`…) | Regla fuerte de 2px entre secciones · 1px solo en filas internas. |
-| `band` / `band-fg` | `bg-band text-band-fg` | Bandas de tinta: header de tabla, prefijo `$`. |
-| `neutral-100…950` | `text-neutral-800`, … | Rampa neutra del handoff (sustituye a la de Tailwind). |
-| `shadow-modal` | `shadow-modal` | Única sombra permitida: diálogos. |
+| Token                                   | Clase                                           | Uso                                                                                                    |
+| --------------------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `accent` #1746D4                        | `bg-accent`, `text-accent-fg`                   | Acción primaria, posición #1, fila propia, estado en vivo. Como texto solo en cifras grandes (≥ 24px). |
+| `accent-hover` #1239B0                  | `hover:bg-accent-hover`                         | Hover del botón primario.                                                                              |
+| `accent-press` #0E2F8F                  | `text-accent-press`, `active:bg-accent-press`   | Pressed y **todo texto corrido en azul** (contraste AA).                                               |
+| `accent-100…900`                        | `bg-accent-200`, …                              | Rampa. `accent-200` = fondo de tags "disponible"/"sube" y `::selection`.                               |
+| `bg` #F2F3F6                            | `bg-bg`                                         | Fondo de toda la app.                                                                                  |
+| `surface` #E7E9EF · `surface-2` #F5F7FA | `bg-surface`, `bg-surface-2`                    | Tarjetas, campos, skeletons · hover de fila.                                                           |
+| `ink` #1B1D22                           | `text-ink`                                      | Texto principal.                                                                                       |
+| `muted` #5B6069 · `faint` #95999F       | `text-muted`, `text-faint`                      | Secundario · etiquetas y valores vacíos.                                                               |
+| `rule` / `rule-soft`                    | `rule`, `rule-soft` (+ `border-t`, `border-b`…) | Regla fuerte de 2px entre secciones · 1px solo en filas internas.                                      |
+| `band` / `band-fg`                      | `bg-band text-band-fg`                          | Bandas de tinta: header de tabla, prefijo `$`.                                                         |
+| `neutral-100…950`                       | `text-neutral-800`, …                           | Rampa neutra del handoff (sustituye a la de Tailwind).                                                 |
+| `shadow-modal`                          | `shadow-modal`                                  | Única sombra permitida: diálogos.                                                                      |
 
 Utilidades de texto: `figure` (900 / -0.03em / `tabular-nums`, para cifras) y
 `label` (11px / 700 / 0.12em / mayúsculas).
@@ -50,28 +50,39 @@ Tipografía: **Archivo** (única familia, pesos 400–900) vía `next/font` en `
 ## Componentes
 
 ### Layout
+
 - **`PageShell`** — `<main>` de cada página. `tone="white" | "muted"`, `centered` para auth/errores.
 - **`Container`** — ancho + padding lateral. `width="wide" (6xl) | "content" (4xl) | "narrow" (3xl) | "form" (sm)`.
 - **`SiteHeader`** — logo a la izquierda; los hijos van a la derecha como nav. `subtitle` para texto bajo el logo.
-- **`SiteFooter`**, **`Logo`** (`href={null}` para que no sea enlace).
+- **`SiteFooter`**.
+- **`Logo`** — lockup sello + "EL N1". `size` (alto del sello, mín. 24), `tone="ink" | "paper" | "accent"`,
+  `compact` (solo sello), `href={null}` para que no sea enlace. **`Seal`** es el sello solo.
+  Es la única forma redonda de la app. Los mismos valores viven en `lib/brand.ts`; los
+  archivos de `public/logo-*.svg|png` se regeneran con `node scripts/brand-assets.mjs`.
+  Favicon, icono iOS y Open Graph se generan en `app/icon.tsx`, `app/apple-icon.tsx` y
+  `app/opengraph-image.tsx` con la fuente vendida en `app/fonts/`.
 - **`EmptyState`** — título centrado + texto + `action`. `tone="error"` para pantallas de error.
 
 ### Acciones
+
 - **`Button`** — `<button>` o `next/link` si tiene `href`.
   - `variant`: `primary` (negro, acciones de cuenta) · `accent` (marca, acciones de dinero/ranking) · `outline` · `ghost` · `link`.
   - `size`: `sm` · `md` · `lg` (CTA de ancho completo con `block`).
 
 ### Formularios
+
 - **`Field`** — `label` + control hijo + `hint`.
 - **`Input`**, **`Textarea`**, **`Select`** — controles con el estilo base (`controlClassName`).
 - **`PrefixedInput`** — control con prefijo fijo dentro del borde (`@usuario`).
 
 ### Feedback
+
 - **`Alert`** — `tone="info" | "success" | "warning" | "error" | "neutral"`, `title`, `compact` (dentro de formularios), `closeHref`. Pone `role="alert"` a los errores y `role="status"` al resto.
 - **`Badge`** — etiqueta pequeña en mayúsculas con los mismos tonos.
 - **`Modal`** — diálogo centrado con `eyebrow`, `title`, `onClose` (×, Escape o clic fuera). Cliente.
 
 ### Contenido
+
 - **`Card`** — superficie blanca. `padding="none" | "sm" | "md" | "lg"`, `elevated`.
 - **`CardSection`** — tarjeta con `title` y `description`; bloques de un formulario largo.
 - **`Eyebrow`** — texto pequeño en mayúsculas sobre un título. `tone="brand" | "muted" | "light"`, `size="sm" | "xs"`.
