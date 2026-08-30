@@ -12,25 +12,27 @@ const PADDING: Record<Padding, string> = {
 
 type CardProps = {
   padding?: Padding;
-  /** Sombra suave (paneles de auth, página pública). */
+  /** Fondo `surface` (por defecto) o el fondo de página. */
+  tone?: "surface" | "bg";
+  /** Se mantiene por compatibilidad; la marca no usa sombras fuera del diálogo. */
   elevated?: boolean;
   className?: string;
   children: ReactNode;
 };
 
-/** Superficie blanca con borde y esquinas redondeadas. */
+/** Superficie con borde de 2px, sin radio ni sombra. */
 export function Card({
   padding = "md",
-  elevated = false,
+  tone = "surface",
   className,
   children,
 }: CardProps) {
   return (
     <div
       className={cn(
-        "border border-neutral-200 bg-white",
+        "rule border",
+        tone === "surface" ? "bg-surface" : "bg-bg",
         PADDING[padding],
-        elevated && "shadow-sm",
         className,
       )}
     >
@@ -46,7 +48,7 @@ type CardSectionProps = {
   children: ReactNode;
 };
 
-/** Tarjeta con título: bloques de un formulario largo. */
+/** Tarjeta con título separado por una regla de 2px: bloques de un formulario largo. */
 export function CardSection({
   title,
   description,
@@ -54,14 +56,16 @@ export function CardSection({
   children,
 }: CardSectionProps) {
   return (
-    <section
-      className={cn("border border-neutral-200 bg-white p-6", className)}
-    >
-      <h2 className="text-xl font-black">{title}</h2>
-      {description && (
-        <p className="mt-1 text-sm text-neutral-500">{description}</p>
-      )}
-      <div className="mt-5">{children}</div>
+    <section className={cn("rule bg-surface border", className)}>
+      <header className="rule border-b px-6 py-5">
+        <h2 className="text-[22px] leading-tight font-extrabold tracking-[-0.01em]">
+          {title}
+        </h2>
+        {description && (
+          <p className="text-muted mt-1 text-sm">{description}</p>
+        )}
+      </header>
+      <div className="p-6">{children}</div>
     </section>
   );
 }

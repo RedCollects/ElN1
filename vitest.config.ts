@@ -4,8 +4,12 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     environment: "node",
-    include: ["**/*.test.ts"],
+    // `forks` (el pool por defecto) agota el tiempo al arrancar jsdom en Windows.
+    pool: "threads",
+    include: ["**/*.test.ts", "**/*.test.tsx"],
     exclude: ["node_modules", ".next"],
+    // Los tests de componentes (app/**/*.test.tsx) declaran
+    // `// @vitest-environment jsdom` en su primera línea.
     coverage: {
       provider: "v8",
       include: ["lib/**/*.ts"],

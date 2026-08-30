@@ -2,33 +2,53 @@ import Link from "next/link";
 import type { ComponentProps, ReactNode } from "react";
 import { cn } from "./cn";
 
-export type ButtonVariant = "primary" | "accent" | "outline" | "ghost" | "link";
+/**
+ * `primary` azul (pagar, ocupar, subir), `secondary` con borde de 2px (ver,
+ * volver, cancelar), `ghost` texto discreto (cerrar sesión), `link` enlace en
+ * línea dentro de un párrafo.
+ * `accent` y `outline` son alias de `primary` y `secondary`.
+ */
+export type ButtonVariant =
+  "primary" | "secondary" | "ghost" | "link" | "accent" | "outline";
 export type ButtonSize = "sm" | "md" | "lg";
 
-const VARIANTS: Record<ButtonVariant, string> = {
-  /** Acción principal neutra (registro, entrar, guardar). */
-  primary: "bg-neutral-900 text-white hover:bg-neutral-700",
-  /** Acción de marca (ofertar, pagar, subir al ranking). */
-  accent: "bg-accent text-accent-fg hover:bg-accent-hover",
-  /** Acción secundaria con borde. */
-  outline:
-    "border border-neutral-300 bg-white text-neutral-700 hover:bg-neutral-100",
-  /** Texto discreto (cerrar sesión, ya tengo cuenta). */
-  ghost: "text-neutral-500 hover:text-neutral-900",
-  /** Enlace en color de marca. */
-  link: "text-accent-press hover:underline",
+const ALIASES: Partial<Record<ButtonVariant, ButtonVariant>> = {
+  accent: "primary",
+  outline: "secondary",
 };
 
-const SIZES: Record<ButtonSize, string> = {
-  sm: "px-4 py-2 text-xs",
-  md: "px-5 py-3 text-sm",
-  lg: "px-5 py-4 text-base",
+const VARIANTS: Record<ButtonVariant, string> = {
+  primary:
+    "bg-accent text-accent-fg hover:bg-accent-hover active:bg-accent-press",
+  secondary:
+    "rule border bg-transparent text-ink hover:bg-ink hover:text-bg hover:border-ink",
+  ghost: "text-muted hover:text-accent",
+  link: "text-accent-press hover:text-accent underline-offset-2 hover:underline",
+  accent: "",
+  outline: "",
+};
+
+/* El secundario lleva borde de 2px: se le restan 2px de padding para que mida
+   lo mismo que el primario. */
+const SIZES: Record<ButtonSize, { primary: string; secondary: string }> = {
+  sm: {
+    primary: "px-[18px] py-[11px] text-[12px]",
+    secondary: "px-4 py-[9px] text-[12px]",
+  },
+  md: {
+    primary: "px-[26px] py-[15px] text-[13px]",
+    secondary: "px-6 py-[13px] text-[13px]",
+  },
+  lg: {
+    primary: "px-7 py-[18px] text-[13px]",
+    secondary: "px-[26px] py-4 text-[13px]",
+  },
 };
 
 type BaseProps = {
   variant?: ButtonVariant;
   size?: ButtonSize;
-  /** Ocupa todo el ancho disponible. */
+  /** Ocupa todo el ancho disponible. El label sigue al ras izquierdo. */
   block?: boolean;
   className?: string;
   children: ReactNode;
@@ -49,7 +69,7 @@ export type ButtonProps = AsButton | AsLink;
  */
 export function Button(props: ButtonProps) {
   const {
-    variant = "primary",
+    variant: rawVariant = "primary",
     size = "md",
     block = false,
     className,
@@ -57,14 +77,20 @@ export function Button(props: ButtonProps) {
     ...rest
   } = props;
 
+  const variant = ALIASES[rawVariant] ?? rawVariant;
   const isText = variant === "ghost" || variant === "link";
 
   const classes = cn(
-    "inline-flex items-center justify-center gap-2 font-bold transition",
-    "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
-    "disabled:cursor-not-allowed disabled:opacity-50",
+    "inline-flex items-center justify-start gap-2 text-left font-bold uppercase tracking-[0.08em]",
+    "transition-[background-color,color] duration-[120ms] ease-linear",
+    "disabled:cursor-not-allowed disabled:bg-surface disabled:text-faint disabled:opacity-45",
     VARIANTS[variant],
-    isText ? (size === "sm" ? "text-xs" : "text-sm") : SIZES[size],
+    isText
+      ? size === "sm"
+        ? "text-[12px]"
+        : "text-[13px]"
+      : SIZES[size][variant === "secondary" ? "secondary" : "primary"],
+    variant === "link" && "normal-case tracking-normal font-bold",
     block && "flex w-full",
     className,
   );
@@ -79,6 +105,37 @@ export function Button(props: ButtonProps) {
 
   return (
     <button {...(rest as Omit<AsButton, keyof BaseProps>)} className={classes}>
+      {children}
+    </button>
+  );
+}
+
+type IconButtonProps = Omit<ComponentProps<"button">, "children"> & {
+  /** Nombre accesible obligatorio: el botón solo muestra un icono. */
+  label: string;
+  children: ReactNode;
+};
+
+/** Botón cuadrado de 46px con borde de 2px, solo icono. */
+export function IconButton({
+  label,
+  className,
+  children,
+  ...props
+}: IconButtonProps) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      {...props}
+      className={cn(
+        "rule text-ink grid h-[46px] w-[46px] shrink-0 place-items-center border bg-transparent",
+        "hover:bg-ink hover:text-bg transition-[background-color,color] duration-[120ms] ease-linear",
+        "disabled:cursor-not-allowed disabled:opacity-45",
+        className,
+      )}
+    >
       {children}
     </button>
   );

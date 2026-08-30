@@ -51,6 +51,82 @@ Tipografía: **Archivo** (única familia, pesos 400–900) vía `next/font` en `
 
 ### Layout
 
+- **`PageShell`** — `<main>` de cada página, siempre sobre `bg`. `centered` para auth/errores.
+- **`Container`** — ancho + padding lateral. `width="wide" (1320) | "content" (960) | "narrow" (760) | "form" (420)`.
+- **`SiteHeader`** — nav de 68px con regla inferior de 2px: `Logo` a la izquierda, los hijos a la
+  derecha. `subtitle` junto al logo. **`NavLink`** para enlaces de nav con estado activo (azul).
+- **`SiteFooter`** — regla superior, enlaces legales al ras.
+- **`Logo`** — lockup sello + "EL N1". `size` (alto del sello, mín. 24), `tone="ink" | "paper" | "accent"`,
+  `compact` (solo sello), `href={null}` para que no sea enlace. **`Seal`** es el sello solo.
+  Es la única forma redonda de la app. Los mismos valores viven en `lib/brand.ts`; los
+  archivos de `public/logo-*.svg|png` se regeneran con `node scripts/brand-assets.mjs`.
+  Favicon, icono iOS y Open Graph se generan en `app/icon.tsx`, `app/apple-icon.tsx` y
+  `app/opengraph-image.tsx` con la fuente vendida en `app/fonts/`.
+- **`EmptyState`** — título + texto + `action`, al ras izquierdo. `tone="error"`.
+
+### Acciones
+
+- **`Button`** — `<button>` o `next/link` si tiene `href`. Label 13px en mayúsculas, **al ras
+  izquierdo incluso con `block`**.
+  - `variant`: `primary` (azul: pagar, ocupar, subir) · `secondary` (borde 2px: ver, volver,
+    cancelar) · `ghost` (texto discreto) · `link` (enlace en línea). `accent` y `outline` son
+    alias de `primary` y `secondary`.
+  - `size`: `sm` · `md` · `lg`. `block` para ancho completo.
+- **`IconButton`** — cuadrado de 46px con borde, solo icono; `label` obligatorio.
+- **`Icon`** — Lucide con stroke 2.2 (3 en ≤ 12px) y terminales cuadradas. `name` de la lista
+  en `Icon.tsx`; añadir ahí los que hagan falta. Nunca emojis.
+
+### Formularios
+
+- **`Field`** — `label` (11px mayúsculas) + control hijo + `hint` (azul de párrafo) o `error`
+  (mismo estilo, `role="alert"`; poner `aria-invalid` en el control para el borde azul).
+- **`Input`**, **`Textarea`**, **`Select`** — borde 2px, fondo `bg`, focus azul (`controlClassName`).
+- **`PrefixedInput`** — prefijo dentro del borde (`@usuario`).
+- **`MoneyInput`** — prefijo `$` en banda de tinta, cifra tabular, sufijo `MXN`.
+- **`Segmented`**, **`Switch`**, **`Radio`** — controles cuadrados con estado (cliente).
+
+### Feedback
+
+- **`Alert`** — `tone="accent" | "neutral"`: borde 2px azul (pide atención o acción) o de tinta
+  (informativo). `title`, `compact`, `closeHref`. Los tonos viejos se traducen
+  (`error`/`warning`/`info` → `accent`, `success` → `neutral`); `error` conserva `role="alert"`.
+- **`Tag`** — etiqueta de estado 11px: `first` (#1, azul) · `available` · `taken` · `verified` ·
+  `neutral` · `up` · `down`. `Badge` es alias.
+- **`LiveDot`** — cuadro azul de 8px + etiqueta ("En vivo").
+- **`Modal`** — diálogo de 420px con borde 2px y la única sombra. `eyebrow`, `title`, `actions`
+  (primer botón `flex-1`, el resto separados por regla vertical). Cliente.
+- **`Skeleton`** — bloque rectangular en `surface` del tamaño final. Sin spinners.
+
+### Contenido
+
+- **`Card`** — superficie con borde 2px. `padding`, `tone="surface" | "bg"`.
+- **`CardSection`** — tarjeta con `title` (22px) separado por regla; bloques de un formulario.
+- **`Eyebrow`** — etiqueta 11px sobre un título. `tone="accent" | "muted" | "faint" | "paper"`.
+- **`Heading`** — `as` independiente de `size="display" | "title" | "h2" | "lg" | "md" | "sm"`.
+- **`Figure`** — cifra 900 / `tabular-nums`. `size` en px, `tone="ink" | "accent" | "paper"`.
+  El azul solo en cifras ≥ 24px.
+- **`Lead`**, **`Muted`** — párrafo introductorio / texto secundario.
+- **`Price`** — cantidad en MXN como `Figure`. `size`, `tone="accent" | "ink"`.
+- **`Avatar`** — logo de negocio cuadrado; sin imagen, iniciales de `alt` sobre `surface`.
+  `size="xs" | "sm" | "md" | "lg"`.
+
+## Reglas de la identidad
+
+1. **Radio 0 en todo.** Todos los `--radius-*` valen 0 y no se escribe `rounded-*`. La
+   única excepción es el sello circular del logo.
+2. **Reglas de 2px** (`rule`) para separar secciones; 1px (`rule-soft`) solo dentro de
+   tablas y listas.
+3. **Todo al ras izquierdo**, incluido el label dentro de botones anchos. Nunca centrar.
+4. **El azul con moderación**: acción primaria, posición #1, fila propia, en vivo. Sin
+   fondos azules extensos salvo la tarjeta del líder.
+5. **Cifras siempre `figure`** (`tabular-nums`) para que no salten al actualizar.
+6. **Sin emojis ni colores semánticos** (verde/ámbar/rojo). Iconos: Lucide. Los errores
+   se marcan con texto en `accent-press` y borde `accent`.
+
+## Componentes
+
+### Layout
+
 - **`PageShell`** — `<main>` de cada página. `tone="white" | "muted"`, `centered` para auth/errores.
 - **`Container`** — ancho + padding lateral. `width="wide" (6xl) | "content" (4xl) | "narrow" (3xl) | "form" (sm)`.
 - **`SiteHeader`** — logo a la izquierda; los hijos van a la derecha como nav. `subtitle` para texto bajo el logo.
@@ -96,4 +172,6 @@ Tipografía: **Archivo** (única familia, pesos 400–900) vía `next/font` en `
 1. Antes de escribir clases de Tailwind a mano, busca si ya existe el componente. Si un patrón se repite dos veces, súbelo aquí.
 2. El color de marca solo se escribe como `accent-*`; nunca un hex ni `sky-*`.
 3. Los componentes aceptan `className` para ajustes de posición (márgenes, ancho), no para cambiar su aspecto.
-4. Los componentes de dominio (tarjeta del ranking, anuncio, subida de imágenes) viven en `app/components/` o junto a su ruta y se construyen con estas primitivas.
+4. Sin `rounded-*`, sin emojis, sin `emerald`/`amber`/`red`. Si un estado necesita
+   distinguirse, se usa tinta, gris o el azul de acento.
+5. Los componentes de dominio (tarjeta del ranking, anuncio, subida de imágenes) viven en `app/components/` o junto a su ruta y se construyen con estas primitivas.
