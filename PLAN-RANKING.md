@@ -49,6 +49,51 @@ del final.
    posición mientras esté viva debe ofrecer 110 % de la reserva); al
    confirmar se revalida; si no alcanza → reembolso automático.
 8. **Sin caducidad.** Una posición pagada no vence.
+9. **Monto libre.** El mínimo es el piso; el comprador puede pagar más
+   (hasta un tope, p. ej. $50,000 por límites de Mercado Pago). Pagar más
+   encarece superarlo: quien pone $1,000 por el #1 solo sale cuando alguien
+   pague $1,100.
+10. **Ranking en vivo.** Portada y modal se actualizan solos (Supabase
+    Realtime sobre `businesses` y `bids`, polling de 5 s como respaldo). Si
+    durante una reserva cambia el ocupante o el precio de la posición
+    reservada, el modal muestra una alerta con el ranking nuevo y botones
+    **Continuar** / **Cancelar** / **Reservar de nuevo a $Z** (si el monto
+    ya no alcanza).
+
+### Tablas de ejemplo
+
+**Pagó** = lo que pagó el ocupante. **Superar** = `ceil(1.1 × máximo pagado
+desde esa posición hacia abajo)`.
+
+Arranque secuencial:
+
+| Paso | #1 | #2 | #3 | Libre |
+|---|---|---|---|---|
+| Vacío | — | — | — | #1 a $100 |
+| A compra #1 por $100 | A 100 · superar 110 | — | — | #2 a $100 |
+| B compra #2 por $100 | A 100 · superar 110 | B 100 · superar 110 | — | #3 a $100 |
+| C compra #3 por $100 | A 100 · superar 110 | B 100 · superar 110 | C 100 · superar 110 | #4 a $100 |
+
+Superar al #1 y al #2 cuesta lo mismo: es intencional. A precio igual todos
+escogen la de arriba, y eso empuja el #1 solo. (Alternativa descartada:
+escalón fijo de $10 entre posiciones — más "bonito", más difícil de explicar.)
+
+Monto libre — alguien pone $1,000:
+
+| Paso | #1 | #2 | #3 | #4 |
+|---|---|---|---|---|
+| Inicio | A 100 · sup 110 | B 100 · sup 110 | C 100 · sup 110 | libre $100 |
+| D paga $1,000 por #1 | D 1000 · sup 1100 | A 100 · sup 110 | B 100 · sup 110 | C 100 · sup 110 |
+| E paga $110 por #2 | D 1000 · sup 1100 | E 110 · sup 121 | A 100 · sup 110 | B 100 · sup 110 |
+
+Por qué "máximo hacia abajo" y no "lo que pagó el ocupante":
+
+| Paso | #1 | #2 | #3 |
+|---|---|---|---|
+| Inicio | A 100 | B 100 | — |
+| C paga $500 por #2 | A 100 | C 500 | B 100 |
+| Superar al #1 con "lo que pagó" | $110 — absurdo: C pagó $500 por estar debajo de alguien que se quita con $110 | | |
+| Superar al #1 con "máximo hacia abajo" | $550 ✅ | sup 550 | sup 110 |
 
 ### Ejemplo
 
@@ -90,9 +135,13 @@ Superar a Ana cuesta $121; superar al #1 cuesta ceil(121×1.1) = $134.
 - `lib/prices.ts`: `getInitialPrice` → $100 plano; `getMinimumOffer(position,
   prices[])` con el máximo hacia abajo. Tests actualizados.
 - `app/api/checkout/route.ts`: validar contra `position_state` (ya lo hace);
-  aceptar solo ocupadas o `max+1`.
+  aceptar solo ocupadas o `max+1`; aceptar `amount` libre `>= mínimo` y
+  `<= tope` (hoy cobra exactamente el mínimo).
 - Modal de posiciones (`app/Ranking.tsx`): mostrar ocupadas + una libre en
-  vez de 50 casillas.
+  vez de 50 casillas; campo de monto con el mínimo prellenado.
+- Ranking en vivo: suscripción Realtime (`lib/supabase-public.ts` en el
+  cliente, tablas `businesses` y `bids` con RLS de solo lectura) + polling
+  de respaldo; alerta en el modal cuando cambia la posición reservada.
 - `/como-funciona` y `/terminos`: reglas nuevas + nota de IVA/factura.
 - `/admin`: tabla de historial de ofertas (Server Action, sin endpoint).
 
@@ -113,14 +162,14 @@ Superar a Ana cuesta $121; superar al #1 cuesta ceil(121×1.1) = $134.
 Si las ramas `calidad/*` entran antes, el PR 2 se apila sobre ellas para
 aprovechar los tests y CI.
 
-## 5. Decisiones que necesitamos de ti
+## 5. Decisiones (respondidas por el segundo dev el 2026-08-30)
 
-1. ¿De acuerdo con **recorrer** (nadie sale salvo el #50) en vez de sacar al
-   superado?
-2. ¿De acuerdo con que el precio de superación sea **el máximo hacia abajo**
-   (precios siempre ordenados) y no solo lo que pagó ese ocupante?
-3. ¿Aceptas que la reserva sea sobre un **número** aunque el ranking se
-   recorra durante los 5 minutos?
-4. Con base plana de $100, ser #1 y entrar de último cuestan casi lo mismo
-   al principio ($110 vs $100). ¿Está bien así (barrera baja) o quieres un
-   escalón mayor para el top 3?
+1. Recorrer, no sacar → **sí**.
+2. Precio de superación = máximo hacia abajo, empates permitidos → **sí**,
+   y además **monto libre** (regla 9).
+3. Reserva sobre un número → **sí**, con **ranking en vivo y alerta** en el
+   modal (regla 10).
+4. Base plana $100 sin escalón para el top → **sí**: para que se abra el
+   último puesto ya se compraron todos los demás.
+
+Pendiente solo el visto bueno del primer dev antes de implementar.
