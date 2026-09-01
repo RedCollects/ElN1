@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { hasBigAd, type Business } from "../../lib/business";
-import { INITIAL_PRICES } from "../../lib/prices";
+import { BASE_PRICE } from "../../lib/prices";
 import type { Reservation } from "../../lib/payments";
 import { formatPrice } from "../../lib/format";
 import { Avatar, Button, Eyebrow, Price, cn } from "@/app/ui";
@@ -77,16 +77,16 @@ export function RankingCard({
 
           <div className="min-w-0 flex-1">
             <Eyebrow size="xs">Posición #{position}</Eyebrow>
-            <h3 className="mt-1 text-lg font-black">POSICIÓN DISPONIBLE</h3>
-            <p className="mt-1 text-sm text-neutral-500">Haz que tu negocio aparezca aquí.</p>
+            <h3 className="mt-1 text-lg font-black">SIGUIENTE LUGAR LIBRE</h3>
+            <p className="mt-1 text-sm text-neutral-500">Entra al ranking aquí o supera a quien quieras.</p>
             <p className="mt-2 text-sm font-bold">
-              Desde {formatPrice(minimumOffer ?? INITIAL_PRICES[position])}
+              Desde {formatPrice(minimumOffer ?? BASE_PRICE)}
             </p>
           </div>
 
           {onBid && (
             <Button size="sm" onClick={() => onBid(position)} className="shrink-0">
-              OCUPAR
+              ENTRAR
             </Button>
           )}
         </div>
