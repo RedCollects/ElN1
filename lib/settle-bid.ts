@@ -5,7 +5,6 @@ import { createServerSupabaseClient } from "./supabase-server";
 import { autoRefundOutbid } from "./payments";
 import { withTax } from "./legal";
 import { log } from "./log";
-import { withTax } from "./legal";
 
 type SettleResult =
   | { settled: true; bidId: string; alreadySettled?: true; result?: unknown }
