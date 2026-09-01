@@ -253,7 +253,9 @@ describe("verifyAndSettlePayment", () => {
   });
 
   it("acepta el importe aunque Postgres lo devuelva como texto", async () => {
-    paymentGet.mockResolvedValue(approvedPayment({ transaction_amount: withTax(110) }));
+    paymentGet.mockResolvedValue(
+      approvedPayment({ transaction_amount: withTax(110) }),
+    );
     fake.bid = pendingBid({ amount: "110" as unknown as number });
     fake.rpcResult = { success: true };
 
