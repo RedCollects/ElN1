@@ -6,9 +6,10 @@
 --
 --   * Precio del negocio = monto de su ultima oferta pagada (reemplaza).
 --   * Ranking = orden por precio desc; empate: el que llego primero arriba.
---   * Solo 2 reembolsos al confirmar un pago tardio: entrada que ya no
---     supera al #50 con ranking lleno, y monto <= precio propio estando
---     dentro. Todo lo demas cuenta donde caiga.
+--   * Reembolsos al confirmar un pago tardio: entrada que ya no supera al
+--     #50 con ranking lleno, monto <= precio propio estando dentro, negocio
+--     desactivado por el admin, u oferta legada sin negocio ligado. Todo lo
+--     demas cuenta donde caiga.
 
 -- Momento en que el negocio alcanzo su precio actual (desempate del orden).
 alter table public.businesses
@@ -102,6 +103,7 @@ declare
   old_position integer;
   ranked_count integer;
   last_price numeric;
+  lowest_price numeric;
   new_position integer;
 begin
   perform pg_advisory_xact_lock(hashtext('eln1_ranking'));
@@ -130,12 +132,28 @@ begin
     end if;
   end if;
 
-  select count(*), min(current_price) filter (where position = ranking_size)
-  into ranked_count, last_price
+  select count(*), min(current_price) filter (where position = ranking_size), min(current_price)
+  into ranked_count, last_price, lowest_price
   from public.businesses
   where active and status = 'published' and position between 1 and ranking_size;
 
   old_position := bidder.position;
+
+  -- Reembolso (c): el admin desactivo el negocio mientras el pago estaba en
+  -- curso. Sin esto se cobraria sin dar posicion.
+  if bidder.id is not null and not bidder.active then
+    update public.bids
+    set status = 'outbid', payment_id = p_payment_id, failure_reason = 'negocio_desactivado'
+    where id = selected_bid.id;
+
+    return jsonb_build_object(
+      'success', false,
+      'reason', 'outbid',
+      'required', null,
+      'paid', selected_bid.amount,
+      'bid_id', selected_bid.id
+    );
+  end if;
 
   -- Reembolso (a): estando dentro, un monto que no mejora el precio propio.
   if bidder.id is not null and bidder.position is not null
@@ -147,7 +165,7 @@ begin
     return jsonb_build_object(
       'success', false,
       'reason', 'outbid',
-      'required', bidder.current_price + 1,
+      'required', greatest(bidder.current_price + 1, ceil(coalesce(lowest_price, 0) * 1.1), 100),
       'paid', selected_bid.amount,
       'bid_id', selected_bid.id
     );
@@ -170,19 +188,28 @@ begin
     );
   end if;
 
-  if bidder.id is not null then
-    update public.businesses
-    set current_price = selected_bid.amount,
-        price_set_at = now(),
-        status = 'published'
-    where id = bidder.id;
-  else
-    -- Oferta antigua sin negocio ligado: se crea el negocio (compatibilidad).
-    insert into public.businesses (name, category, current_price, price_set_at, active, status)
-    values (selected_bid.business_name, coalesce(selected_bid.category, 'General'),
-            selected_bid.amount, now(), true, 'published')
-    returning * into bidder;
+  -- Ofertas antiguas sin negocio ligado: ya no existen en produccion (la
+  -- base se reconstruyo el 2026-08-27); reembolsar en vez de crear un
+  -- negocio fantasma sin perfil.
+  if bidder.id is null then
+    update public.bids
+    set status = 'outbid', payment_id = p_payment_id, failure_reason = 'oferta_legada'
+    where id = selected_bid.id;
+
+    return jsonb_build_object(
+      'success', false,
+      'reason', 'outbid',
+      'required', null,
+      'paid', selected_bid.amount,
+      'bid_id', selected_bid.id
+    );
   end if;
+
+  update public.businesses
+  set current_price = selected_bid.amount,
+      price_set_at = clock_timestamp(),
+      status = 'published'
+  where id = bidder.id;
 
   perform public.reorder_ranking();
 
@@ -202,7 +229,7 @@ begin
     'business_id', bidder.id,
     'bid_id', selected_bid.id,
     'position', new_position,
-    'shifted', true,
+    'shifted', new_position is distinct from old_position,
     'moved_from', old_position
   );
 end;
