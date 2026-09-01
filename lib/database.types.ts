@@ -150,6 +150,7 @@ export type Database = {
           owner_id: string | null;
           phone: string | null;
           position: number | null;
+          price_set_at: string | null;
           slug: string | null;
           status: string;
           tagline: string | null;
@@ -179,6 +180,7 @@ export type Database = {
           owner_id?: string | null;
           phone?: string | null;
           position?: number | null;
+          price_set_at?: string | null;
           slug?: string | null;
           status?: string;
           tagline?: string | null;
@@ -208,6 +210,7 @@ export type Database = {
           owner_id?: string | null;
           phone?: string | null;
           position?: number | null;
+          price_set_at?: string | null;
           slug?: string | null;
           status?: string;
           tagline?: string | null;
@@ -294,6 +297,16 @@ export type Database = {
         }[];
       };
       compact_ranking: { Args: never; Returns: undefined };
+      ranking_state: {
+        Args: { p_business_id?: string | null };
+        Returns: {
+          lowest_price: number;
+          ranked_count: number;
+          own_price: number;
+          own_position: number;
+        }[];
+      };
+      reorder_ranking: { Args: never; Returns: undefined };
       expire_bids: { Args: never; Returns: number };
       position_state: {
         Args: { p_position: number; p_business_id?: string | null };

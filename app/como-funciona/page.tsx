@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import {
   BASE_PRICE,
+  FLOOR_FACTOR,
   MAX_OFFER,
   MAX_RANKING_POSITION,
-  OUTBID_FACTOR,
 } from "@/lib/prices";
 import { RESERVATION_MINUTES } from "@/lib/payments";
 import { BIG_AD_MAX_POSITION } from "@/lib/business";
@@ -24,24 +24,28 @@ import {
 export const metadata: Metadata = {
   title: "¿Cómo funciona? | EL N1",
   description:
-    "Las reglas de EL N1: cómo se compite por una posición, qué cuesta, qué pasa cuando te superan y qué necesitas para participar.",
+    "Las reglas de EL N1: el ranking se ordena por lo que cada negocio ofrece; el que más paga está arriba, siempre.",
 };
 
 /*
  * Esta página es la referencia oficial de las reglas (los Términos remiten a
  * "las reglas visibles del sitio"). Todos los números salen del código
  * (lib/prices, lib/payments, lib/business) para que nunca queden desfasados.
+ *
+ * Regla del equipo: cada PR que cambie precios, posiciones, reservas o el
+ * anuncio grande debe revisar esta página en el mismo PR.
  */
 
-const OUTBID_PERCENT = Math.round((OUTBID_FACTOR - 1) * 100);
+const FLOOR_PERCENT = Math.round((FLOOR_FACTOR - 1) * 100);
 const BASE = formatPrice(BASE_PRICE);
 
-/** Ejemplo de la regla "máximo hacia abajo" con números redondos. */
+/** Ejemplo: ranking ordenado por oferta y qué cuesta cada movimiento. */
 const EXAMPLE = [
-  { position: 1, paid: BASE_PRICE, floor: 500 },
-  { position: 2, paid: 500, floor: 500 },
-  { position: 3, paid: BASE_PRICE, floor: BASE_PRICE },
-].map((row) => ({ ...row, toBeat: Math.ceil(row.floor * OUTBID_FACTOR) }));
+  { position: 1, paid: 400 },
+  { position: 2, paid: 200 },
+  { position: 3, paid: BASE_PRICE },
+];
+const EXAMPLE_FLOOR = Math.ceil(BASE_PRICE * FLOOR_FACTOR);
 
 const STEPS = [
   {
@@ -49,39 +53,35 @@ const STEPS = [
     body: "Crea una cuenta con tu correo y completa el perfil de tu negocio: nombre, categoría, ciudad, logo y al menos un medio de contacto (WhatsApp, teléfono, correo o sitio web). Es gratis y no te compromete a nada.",
   },
   {
-    title: "Entra al ranking o supera a alguien",
-    body: `Siempre hay exactamente un lugar libre: el siguiente al último ocupado, y cuesta ${BASE} más IVA. Si prefieres una posición ocupada, tu oferta debe superar en al menos ${OUTBID_PERCENT} % lo que se ha pagado desde esa posición hacia abajo. El sitio te muestra siempre el mínimo exacto, y puedes ofrecer más.`,
+    title: "Elige tu monto",
+    body: `Tú decides cuánto ofrecer y el sitio te dice en qué posición quedarías. El mínimo es ${BASE}, y toda oferta debe ser al menos ${FLOOR_PERCENT} % mayor que el precio más bajo del ranking. Para superar a un negocio concreto basta ofrecer más que él.`,
   },
   {
-    title: "Reserva y paga con Mercado Pago",
-    body: `Al confirmar, la posición queda reservada a ese precio durante ${RESERVATION_MINUTES} minutos mientras pagas con tarjeta, débito o saldo de Mercado Pago. En cuanto el pago se confirma, tu negocio aparece en la posición que elegiste.`,
+    title: "Paga con Mercado Pago",
+    body: `Tienes ${RESERVATION_MINUTES} minutos para pagar con tarjeta, débito o saldo de Mercado Pago (el total es tu oferta más IVA). En cuanto el pago se confirma, el ranking se reordena y apareces en tu lugar.`,
   },
 ];
 
 const RULES = [
   {
-    title: "Un solo lugar libre",
-    body: `El ranking se llena en orden: nadie puede saltarse al #${MAX_RANKING_POSITION} si el #2 está vacío. El siguiente lugar libre siempre cuesta ${BASE} más IVA. Si dos negocios entran al mismo tiempo, el primero en confirmar su pago queda arriba y el segundo justo debajo: nadie pierde su dinero.`,
+    title: "El que más paga está arriba. Siempre.",
+    body: `El ranking se ordena por la última oferta pagada de cada negocio, de mayor a menor. No hay excepciones ni reglas ocultas: si ofreces más que alguien, quedas arriba de él. En un empate exacto queda arriba quien llegó primero a ese precio.`,
   },
   {
-    title: "Superar a un negocio",
-    body: `Para quitarle el lugar a alguien pagas al menos ${OUTBID_PERCENT} % más que la oferta más alta desde esa posición hacia abajo (no solo la de ese negocio); así subir siempre cuesta más que quedarse abajo. Ese negocio y todos los que están debajo bajan un lugar; el que estaba en la #${MAX_RANKING_POSITION} sale del ranking.`,
+    title: "Tu oferta reemplaza a la anterior",
+    body: "Ofertar de nuevo fija tu nuevo precio; los montos no se suman. Si ofreces $300 y luego $350, tu precio es $350 (no $650). Estando en el ranking, cada oferta nueva debe ser mayor que la anterior.",
   },
   {
-    title: "Ofrece lo que quieras",
-    body: `El mínimo es el piso, no el precio. Puedes ofrecer más (hasta ${formatPrice(MAX_OFFER)}) para que superarte cueste ${OUTBID_PERCENT} % más que lo que tú pagaste. Quien pone ${formatPrice(1000)} por el #1 solo sale cuando alguien pague ${formatPrice(Math.ceil(1000 * OUTBID_FACTOR))}.`,
+    title: "El piso del ranking",
+    body: `Entrar cuesta al menos ${BASE}, y toda oferta debe superar en ${FLOOR_PERCENT} % al precio más bajo del ranking en ese momento. Con ${MAX_RANKING_POSITION} lugares ocupados, entrar exige ofrecer más que el #${MAX_RANKING_POSITION}, que sale del ranking (conserva su perfil y puede volver cuando quiera).`,
   },
   {
-    title: "Reservas visibles y ranking en vivo",
-    body: `Cuando alguien inicia un pago, todos ven un aviso con el monto reservado y un contador de ${RESERVATION_MINUTES} minutos. La reserva no bloquea a nadie: puedes superarla ofreciendo ${OUTBID_PERCENT} % más. El ranking se actualiza solo; si la posición que estás viendo cambia antes de que pagues, te avisamos en pantalla.`,
+    title: "La posición que ves es estimada",
+    body: `Antes de pagar, el sitio te muestra dónde quedarías con tu monto. Es un estimado: si otro negocio confirma un pago mayor mientras pagas, quedas un lugar más abajo — tu dinero siempre cuenta donde caiga. Solo hay dos devoluciones automáticas: si con el ranking lleno tu oferta ya no alcanza para entrar, o si tu pago llega cuando ya no mejora tu propio precio.`,
   },
   {
-    title: "Gana quien paga más, no quien da clic primero",
-    body: "Si tu pago se confirma cuando otro negocio ya pagó más por esa posición, no te asignamos el lugar y te devolvemos el importe completo de forma automática. Nunca cobramos por una posición que no te damos.",
-  },
-  {
-    title: "Subir y blindar",
-    body: "Si ya estás en el ranking, puedes comprar una posición más alta (te mueves, los de en medio bajan un lugar y el hueco que dejas se cierra) o pagar por tu propia posición para subir tu oferta y hacerla más difícil de superar. No puedes comprar una posición peor que la que ya tienes.",
+    title: "Ofertas en curso, a la vista",
+    body: `Cuando alguien inicia un pago, todos ven el monto que está ofertando con un contador de ${RESERVATION_MINUTES} minutos. Es informativo: no bloquea ni encarece nada; decide el orden en que se confirman los pagos.`,
   },
   {
     title: "El anuncio grande",
@@ -93,22 +93,17 @@ const FAQ = [
   {
     question: "¿Cuánto dura mi posición?",
     answer:
-      "Hasta que alguien pague más que tú. Puede ser una hora o puede ser meses. La posición no caduca: pagas por ocuparla, no por un tiempo garantizado.",
+      "Hasta que alguien ofrezca más que tú. Puede ser una hora o puede ser meses. La posición no caduca: pagas por competir con tu oferta, no por un tiempo garantizado.",
   },
   {
     question: "¿Me devuelven el dinero si me superan?",
     answer:
-      "No. Es como una subasta: quien te supera paga más y tú bajas un lugar. La única devolución automática es cuando tu pago se confirma tarde y la posición ya no alcanzaba (ver arriba).",
+      "No. Es una subasta permanente: quien te supera paga más y tú bajas un lugar (o sales, si eras el último). Las únicas devoluciones automáticas son las dos de arriba: tu pago llega tarde y ya no alcanza para entrar al ranking lleno, o ya no mejora tu propio precio.",
   },
   {
     question: `¿Qué pasa si salgo del top ${MAX_RANKING_POSITION}?`,
     answer:
-      "Tu negocio deja de aparecer en el ranking, pero tu cuenta, tu perfil y tu página siguen existiendo y son visibles por su enlace. Puedes volver a ofertar cuando quieras desde tu panel.",
-  },
-  {
-    question: "¿Puedo cambiar mi perfil después de pagar?",
-    answer:
-      "Sí, cuando quieras y sin costo: nombre, descripción, fotos, contacto y redes se editan desde tu panel y se ven al instante.",
+      "Tu negocio deja de aparecer en el ranking, pero tu cuenta, tu perfil y tu página siguen existiendo y son visibles por su enlace. Vuelves cuando quieras con una oferta nueva.",
   },
   {
     question: "¿Los precios incluyen IVA? ¿Dan factura?",
@@ -116,9 +111,14 @@ const FAQ = [
       "Los montos del ranking son más IVA: antes de pagar ves el desglose y el total. Emitimos factura (CFDI) a quien la pida por correo dentro del mes en que pagó, con su RFC y uso de CFDI; pedirla no cambia el importe.",
   },
   {
+    question: "¿Puedo cambiar mi perfil después de pagar?",
+    answer:
+      "Sí, cuando quieras y sin costo: nombre, descripción, fotos, contacto y redes se editan desde tu panel y se ven al instante.",
+  },
+  {
     question: "¿Puedo pagar en OXXO o por transferencia?",
     answer:
-      "Por ahora no: esos pagos se confirman horas o días después, fuera de la ventana de reserva. Aceptamos tarjeta de crédito, débito y saldo de Mercado Pago.",
+      "Por ahora no: esos pagos se confirman horas o días después, fuera de la ventana de pago. Aceptamos tarjeta de crédito, débito y saldo de Mercado Pago.",
   },
   {
     question: '¿Y el leaderboard de "Más visitados"?',
@@ -152,8 +152,8 @@ export default function ComoFuncionaPage() {
           <Lead className="mt-6">
             EL N1 es un ranking público de negocios de México con{" "}
             {MAX_RANKING_POSITION} lugares. No se gana con votos ni con reseñas:
-            se gana pagando más que el que está arriba. El que más ofrece es EL
-            N1, hasta que alguien lo supere.
+            el ranking se ordena por lo que cada negocio ofrece. El que más
+            paga es EL N1, hasta que alguien ofrezca más.
           </Lead>
 
           <section className="mt-14">
@@ -190,11 +190,11 @@ export default function ComoFuncionaPage() {
             </Heading>
 
             <Muted className="mt-2">
-              Entrar al ranking cuesta {BASE} más IVA. Superar a alguien cuesta
-              un {OUTBID_PERCENT} % más que la oferta más alta desde esa
-              posición hacia abajo. Ejemplo: si el #2 pagó {formatPrice(500)},
-              quitarle el #1 a quien pagó {BASE} cuesta{" "}
-              {formatPrice(EXAMPLE[0].toBeat)}.
+              Ejemplo con tres negocios. El más bajo paga {BASE}, así que
+              cualquier oferta nueva debe ser de al menos{" "}
+              {formatPrice(EXAMPLE_FLOOR)} ({FLOOR_PERCENT} % arriba del más
+              bajo). Para ser #1 basta ofrecer más que el #1:{" "}
+              {formatPrice(EXAMPLE[0].paid + 1)}.
             </Muted>
 
             <div className="border-rule mt-6 overflow-x-auto border-2">
@@ -202,8 +202,8 @@ export default function ComoFuncionaPage() {
                 <thead className="label bg-band text-band-fg">
                   <tr>
                     <th className="px-5 py-3">Posición</th>
-                    <th className="px-5 py-3 text-right">Pagó</th>
-                    <th className="px-5 py-3 text-right">Superarla cuesta</th>
+                    <th className="px-5 py-3 text-right">Su oferta</th>
+                    <th className="px-5 py-3 text-right">Superarlo cuesta</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -216,22 +216,27 @@ export default function ComoFuncionaPage() {
                         {formatPrice(row.paid)}
                       </td>
                       <td className="figure text-accent-press px-5 py-3 text-right text-base">
-                        {formatPrice(row.toBeat)}
+                        {formatPrice(Math.max(row.paid + 1, EXAMPLE_FLOOR))}
                       </td>
                     </tr>
                   ))}
                   <tr className="border-rule-soft border-t">
                     <td className="figure px-5 py-3 text-base">
-                      #{EXAMPLE.length + 1} (libre)
+                      Entrar al final
                     </td>
                     <td className="figure px-5 py-3 text-right text-base">—</td>
                     <td className="figure text-accent-press px-5 py-3 text-right text-base">
-                      {BASE}
+                      {formatPrice(EXAMPLE_FLOOR)}
                     </td>
                   </tr>
                 </tbody>
               </table>
             </div>
+
+            <Muted className="mt-3">
+              Tope por oferta: {formatPrice(MAX_OFFER)}. Todos los montos son
+              más IVA.
+            </Muted>
           </section>
 
           <section className="mt-14">
@@ -281,18 +286,14 @@ export default function ComoFuncionaPage() {
               Al ofertar aceptas los{" "}
               <Button href="/terminos" variant="link">
                 términos y condiciones
-              </Button>{" "}
-              y el{" "}
-              <Button href="/privacidad" variant="link">
-                aviso de privacidad
               </Button>
               .
             </Muted>
           </section>
 
           <div className="mt-14">
-            <Button href="/" size="lg" block>
-              Ver el ranking
+            <Button href="/" variant="accent" size="lg" block>
+              VER EL RANKING
             </Button>
           </div>
         </article>

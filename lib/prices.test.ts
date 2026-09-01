@@ -1,42 +1,23 @@
 import { describe, expect, it } from "vitest";
 import {
   BASE_PRICE,
-  INITIAL_PRICES,
+  FLOOR_FACTOR,
   MAX_OFFER,
   MAX_RANKING_POSITION,
-  OUTBID_FACTOR,
-  getInitialPrice,
-  getMinimumOffer,
   isValidPosition,
-  nextFreePosition,
+  lowestRankedPrice,
+  minimumOffer,
   normalizeOffer,
-  priceFloor,
+  projectedPosition,
 } from "./prices";
 
-function ranked(
-  rows: Array<[position: number, price: number, id?: string]>,
-) {
+function ranked(rows: Array<[position: number, price: number, id?: string]>) {
   return rows.map(([position, current_price, id]) => ({
     id: id ?? `b${position}`,
     position,
     current_price,
   }));
 }
-
-describe("getInitialPrice", () => {
-  it("todas las entradas cuestan el precio base", () => {
-    expect(getInitialPrice()).toBe(BASE_PRICE);
-    expect(BASE_PRICE).toBe(100);
-  });
-});
-
-describe("INITIAL_PRICES", () => {
-  it("cubre todas las posiciones con el precio base", () => {
-    expect(Object.keys(INITIAL_PRICES)).toHaveLength(MAX_RANKING_POSITION);
-    expect(INITIAL_PRICES[1]).toBe(BASE_PRICE);
-    expect(INITIAL_PRICES[MAX_RANKING_POSITION]).toBe(BASE_PRICE);
-  });
-});
 
 describe("isValidPosition", () => {
   it("acepta 1..MAX y rechaza el resto", () => {
@@ -46,96 +27,94 @@ describe("isValidPosition", () => {
     expect(isValidPosition(MAX_RANKING_POSITION + 1)).toBe(false);
     expect(isValidPosition(1.5)).toBe(false);
     expect(isValidPosition(null)).toBe(false);
-    expect(isValidPosition(undefined)).toBe(false);
   });
 });
 
-describe("getMinimumOffer", () => {
-  it("sin piso devuelve el precio base", () => {
-    expect(getMinimumOffer(1, null)).toBe(BASE_PRICE);
-    expect(getMinimumOffer(50, undefined)).toBe(BASE_PRICE);
+describe("lowestRankedPrice", () => {
+  it("es el precio más bajo dentro del ranking", () => {
+    expect(lowestRankedPrice(ranked([[1, 400], [2, 200], [3, 100]]))).toBe(100);
   });
 
-  it("con piso aplica el 110 % redondeado hacia arriba", () => {
-    expect(getMinimumOffer(1, 100)).toBe(110);
-    expect(getMinimumOffer(1, 110)).toBe(121);
-    expect(getMinimumOffer(1, 121)).toBe(134); // ceil(133.1)
-  });
-
-  it("coincide con ceil exacto (numeric de Postgres) hasta 10 000", () => {
-    for (let price = 1; price <= 10_000; price += 1) {
-      const cents = Math.round(price * OUTBID_FACTOR * 100);
-      expect(getMinimumOffer(1, price)).toBe(Math.ceil(cents / 100));
-    }
+  it("ignora negocios sin posición y devuelve null si está vacío", () => {
+    expect(lowestRankedPrice([{ id: "x", position: null, current_price: 5 }])).toBe(null);
+    expect(lowestRankedPrice([])).toBe(null);
   });
 });
 
-describe("priceFloor", () => {
-  const board = ranked([
-    [1, 182],
-    [2, 150],
-    [3, 90],
-    [4, 500],
-    [5, 55],
-  ]);
-
-  it("es el máximo pagado desde la posición hacia abajo", () => {
-    expect(priceFloor(1, board, null)).toBe(500);
-    expect(priceFloor(4, board, null)).toBe(500);
-    expect(priceFloor(5, board, null)).toBe(55);
+describe("minimumOffer", () => {
+  it("ranking vacío: el mínimo absoluto", () => {
+    expect(minimumOffer([])).toBe(BASE_PRICE);
   });
 
-  it("incluye la reserva vigente sobre la posición", () => {
-    expect(priceFloor(5, board, 600)).toBe(600);
-    expect(priceFloor(6, [], 120)).toBe(120);
+  it("con ranking: 10 % arriba del más bajo, redondeado hacia arriba", () => {
+    expect(minimumOffer(ranked([[1, 400], [2, 100]]))).toBe(110);
+    expect(minimumOffer(ranked([[1, 101]]))).toBe(112); // ceil(111.1)
+    expect(FLOOR_FACTOR).toBe(1.1);
   });
 
-  it("excluye al negocio que pregunta (cuando sube de posición)", () => {
-    expect(priceFloor(3, board, null, "b4")).toBe(90);
+  it("nunca baja del mínimo absoluto aunque el más bajo sea menor", () => {
+    expect(minimumOffer(ranked([[1, 50]]))).toBe(BASE_PRICE);
   });
 
-  it("devuelve null si no hay nada desde ahí hacia abajo", () => {
-    expect(priceFloor(6, board, null)).toBe(null);
-    expect(priceFloor(1, [], null)).toBe(null);
+  it("estando dentro, además debe superar el precio propio", () => {
+    const board = ranked([[1, 400, "yo"], [2, 100]]);
+    expect(minimumOffer(board, { position: 1, current_price: 400 })).toBe(401);
+    // El propio es el más bajo: manda el piso del 10 %.
+    const low = ranked([[1, 400], [2, 100, "yo"]]);
+    expect(minimumOffer(low, { position: 2, current_price: 100 })).toBe(110);
+  });
+
+  it("fuera del ranking el precio propio no aplica", () => {
+    expect(
+      minimumOffer(ranked([[1, 400], [2, 100]]), { position: null, current_price: 999 }),
+    ).toBe(110);
+  });
+
+  it("no tiene el error de coma flotante (100 × 1.1 = 110, no 111)", () => {
+    expect(minimumOffer(ranked([[1, 100]]))).toBe(110);
   });
 });
 
-describe("nextFreePosition", () => {
-  it("ranking vacío: se vende el #1", () => {
-    expect(nextFreePosition([])).toBe(1);
+describe("projectedPosition", () => {
+  const board = ranked([[1, 400], [2, 200], [3, 100]]);
+
+  it("más que todos: #1; empate exacto queda debajo (el antiguo arriba)", () => {
+    expect(projectedPosition(401, board)).toBe(1);
+    expect(projectedPosition(400, board)).toBe(2);
+    expect(projectedPosition(150, board)).toBe(3);
+    expect(projectedPosition(110, board)).toBe(3);
   });
 
-  it("es el siguiente al último ocupado", () => {
-    expect(nextFreePosition(ranked([[1, 100], [2, 100], [3, 100]]))).toBe(4);
+  it("no cuenta al propio negocio", () => {
+    const own = ranked([[1, 400, "yo"], [2, 200], [3, 100]]);
+    expect(projectedPosition(250, own, "yo")).toBe(1);
   });
 
-  it("ranking lleno: no hay lugar libre", () => {
+  it("null si el monto no alcanza el top 50", () => {
     const full = ranked(
-      Array.from({ length: MAX_RANKING_POSITION }, (_, i) => [i + 1, 100]),
+      Array.from({ length: MAX_RANKING_POSITION }, (_, i) => [i + 1, 1000 - i]),
     );
-    expect(nextFreePosition(full)).toBe(null);
+    expect(projectedPosition(10, full)).toBe(null);
+    expect(projectedPosition(2000, full)).toBe(1);
   });
 });
 
 describe("normalizeOffer", () => {
   it("acepta números y textos con formato", () => {
-    expect(normalizeOffer(150, 110)).toBe(150);
-    expect(normalizeOffer("150", 110)).toBe(150);
-    expect(normalizeOffer("1,500", 110)).toBe(1500);
+    expect(normalizeOffer(150)).toBe(150);
+    expect(normalizeOffer("150")).toBe(150);
+    expect(normalizeOffer("1,500")).toBe(1500);
   });
 
-  it("sube al mínimo y redondea hacia arriba", () => {
-    expect(normalizeOffer(50, 110)).toBe(110);
-    expect(normalizeOffer(110.2, 110)).toBe(111);
+  it("redondea hacia arriba y aplica el tope", () => {
+    expect(normalizeOffer(110.2)).toBe(111);
+    expect(normalizeOffer(999_999)).toBe(MAX_OFFER);
   });
 
-  it("aplica el tope", () => {
-    expect(normalizeOffer(999_999, 110)).toBe(MAX_OFFER);
-  });
-
-  it("rechaza lo que no es un monto", () => {
-    expect(normalizeOffer("abc", 110)).toBe(null);
-    expect(normalizeOffer(NaN, 110)).toBe(null);
-    expect(normalizeOffer(-5, 110)).toBe(null);
+  it("rechaza lo que no es un monto (el mínimo se valida aparte)", () => {
+    expect(normalizeOffer("abc")).toBe(null);
+    expect(normalizeOffer(NaN)).toBe(null);
+    expect(normalizeOffer(-5)).toBe(null);
+    expect(normalizeOffer(0)).toBe(null);
   });
 });

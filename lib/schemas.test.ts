@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import { MAX_RANKING_POSITION } from "./prices";
 import {
   adminProfileSchema,
   adminToggleSchema,
@@ -15,41 +14,24 @@ import { firstMessage, formDataToObject, parseInput } from "./validation";
 const UUID = "3f2504e0-4f89-41d3-9a0c-0305e82c3301";
 
 describe("checkoutSchema", () => {
-  it("acepta una posición válida y normaliza expectedAmount ausente a null", () => {
-    expect(parseInput(checkoutSchema, { position: 3 })).toEqual({
+  it("acepta un monto y descarta la posición informativa", () => {
+    expect(parseInput(checkoutSchema, { amount: 150 })).toEqual({
       ok: true,
-      data: { position: 3, expectedAmount: null, amount: null },
+      data: { amount: 150, position: null },
     });
-    expect(
-      parseInput(checkoutSchema, { position: "7", expectedAmount: "110" }),
-    ).toEqual({
+    expect(parseInput(checkoutSchema, { amount: "110", position: "7" })).toEqual({
       ok: true,
-      data: { position: 7, expectedAmount: 110, amount: null },
+      data: { amount: 110, position: 7 },
     });
   });
 
-  it("rechaza posiciones fuera de rango, decimales o no numéricas", () => {
-    for (const position of [
-      0,
-      MAX_RANKING_POSITION + 1,
-      2.5,
-      "abc",
-      undefined,
-    ]) {
-      expect(parseInput(checkoutSchema, { position })).toEqual({
+  it("rechaza montos ausentes, no positivos o no numéricos", () => {
+    for (const amount of [undefined, 0, -5, "abc"]) {
+      expect(parseInput(checkoutSchema, { amount })).toEqual({
         ok: false,
-        error: "Posición inválida.",
+        error: "Importe inválido.",
       });
     }
-  });
-
-  it("rechaza importes no positivos", () => {
-    expect(
-      parseInput(checkoutSchema, { position: 1, expectedAmount: -5 }),
-    ).toEqual({
-      ok: false,
-      error: "Importe inválido.",
-    });
   });
 });
 
@@ -331,7 +313,7 @@ describe("helpers", () => {
     const result = checkoutSchema.safeParse({});
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(firstMessage(result.error)).toBe("Posición inválida.");
+      expect(firstMessage(result.error)).toBe("Importe inválido.");
     }
     expect(firstMessage(new z.ZodError([]))).toBe("Datos inválidos.");
   });

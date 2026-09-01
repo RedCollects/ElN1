@@ -239,8 +239,9 @@ export default function TermsPage() {
 
             <Section id="reembolsos" number={7} title="Reembolsos">
               <p>
-                Pagas por ocupar una posición en el momento en que se confirma
-                el pago. Por eso:
+                Cada oferta fija tu nuevo precio y reemplaza a la anterior: los
+                montos no se acumulan entre sí. Pagas por competir con tu
+                oferta en el momento en que se confirma el pago. Por eso:
               </p>
               <List
                 items={[

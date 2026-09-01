@@ -61,20 +61,16 @@ const optionalHttpUrl = z.preprocess(
 const POSITION_ERROR = "Posición inválida.";
 
 export const checkoutSchema = z.object({
+  /** Monto de la oferta (neto, sin IVA); el servidor exige >= mínimo vigente. */
+  amount: z.coerce
+    .number("Importe inválido.")
+    .positive("Importe inválido."),
+  /** Aceptado y descartado por compatibilidad con clientes viejos. */
   position: z.coerce
     .number(POSITION_ERROR)
     .int(POSITION_ERROR)
     .min(1, POSITION_ERROR)
-    .max(MAX_RANKING_POSITION, POSITION_ERROR),
-  expectedAmount: z.coerce
-    .number("Importe inválido.")
-    .positive("Importe inválido.")
-    .nullish()
-    .transform((value) => value ?? null),
-  /** Monto libre del usuario (neto, sin IVA); el servidor exige >= mínimo. */
-  amount: z.coerce
-    .number("Importe inválido.")
-    .positive("Importe inválido.")
+    .max(MAX_RANKING_POSITION, POSITION_ERROR)
     .nullish()
     .transform((value) => value ?? null),
 });

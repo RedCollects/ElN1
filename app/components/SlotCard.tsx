@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { hasBigAd, type Business } from "@/lib/business";
-import { BASE_PRICE } from "@/lib/prices";
+
 import type { Reservation } from "@/lib/payments";
 import { formatPrice } from "@/lib/format";
 import { Avatar, Button, Figure, LiveDot, Tag, cn } from "@/app/ui";
@@ -61,10 +61,10 @@ export function SlotCard({
             Siguiente lugar libre
           </h3>
           <p className="text-muted mt-2 text-[13px]">
-            Entra al ranking aquí o supera a quien quieras.
+            Oferta lo que quieras: el ranking se ordena por monto.
           </p>
           <p className="text-accent-press mt-[18px] text-[13px] font-bold tracking-[0.06em] uppercase">
-            Desde {formatPrice(minimumOffer ?? BASE_PRICE)} + IVA
+            Desde {formatPrice(minimumOffer ?? 100)} + IVA
           </p>
           {reservation && (
             <ReservationRow
@@ -184,7 +184,7 @@ export function SlotCard({
               onClick={() => onBid(position)}
             >
               {isOwn
-                ? "Blindar mi lugar"
+                ? "Subir mi oferta"
                 : `Superar por ${formatPrice(minimumOffer)}`}
             </Button>
           </div>
