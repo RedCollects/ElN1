@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import AuthShell from "../auth/AuthShell";
+import AuthShell from "@/app/auth/AuthShell";
 import { RegisterForm } from "./register-form";
 import { Button, Muted } from "@/app/ui";
 
@@ -21,7 +21,7 @@ export default async function RegisterPage({
     >
       <RegisterForm next={next} />
 
-      <Muted className="mt-6 text-center">
+      <Muted className="mt-6">
         ¿Ya tienes cuenta?{" "}
         <Button href="/ingresar" variant="link">
           Ingresar

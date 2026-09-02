@@ -1,8 +1,12 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { EDITABLE_FIELDS, type Business, type EditableField } from "../../lib/business";
-import { RankingCard } from "../components/RankingCard";
+import {
+  EDITABLE_FIELDS,
+  type Business,
+  type EditableField,
+} from "@/lib/business";
+import { SlotCard } from "@/app/components/SlotCard";
 import { CardSection, Eyebrow, Muted } from "@/app/ui";
 import { ImageUploader } from "./image-uploader";
 import { ProfileForm } from "./profile-form";
@@ -53,7 +57,11 @@ export function BusinessEditor({ business }: Props) {
           description="Recortamos automáticamente al tamaño ideal. El logo es necesario para publicar."
         >
           <div className="grid gap-8 sm:grid-cols-[auto_1fr]">
-            <ImageUploader kind="logo" currentUrl={business.logo_url} onPreview={setLogoPreview} />
+            <ImageUploader
+              kind="logo"
+              currentUrl={business.logo_url}
+              onPreview={setLogoPreview}
+            />
             <ImageUploader
               kind="cover"
               currentUrl={business.cover_url}
@@ -65,10 +73,16 @@ export function BusinessEditor({ business }: Props) {
 
       <aside className="lg:sticky lg:top-6 lg:self-start">
         <Eyebrow>Vista previa</Eyebrow>
-        <Muted className="mt-1">Así se verá tu tarjeta en el ranking con el anuncio abierto.</Muted>
+        <Muted className="mt-1">
+          Así se verá tu tarjeta en el ranking con el anuncio abierto.
+        </Muted>
 
         <div className="mt-4">
-          <RankingCard position={business.position ?? 1} business={preview} forceExpanded />
+          <SlotCard
+            position={business.position ?? 1}
+            business={preview}
+            forceExpanded
+          />
         </div>
       </aside>
     </div>

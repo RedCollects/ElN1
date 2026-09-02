@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 
 function remainingSeconds(until: string) {
-  return Math.max(0, Math.floor((new Date(until).getTime() - Date.now()) / 1000));
+  return Math.max(
+    0,
+    Math.floor((new Date(until).getTime() - Date.now()) / 1000),
+  );
 }
 
 export function formatCountdown(seconds: number) {
@@ -21,5 +24,9 @@ export function Countdown({ until }: { until: string }) {
     return () => clearInterval(timer);
   }, [until]);
 
-  return <span suppressHydrationWarning>{formatCountdown(seconds)}</span>;
+  return (
+    <span suppressHydrationWarning className="tabular-nums">
+      {formatCountdown(seconds)}
+    </span>
+  );
 }

@@ -1,39 +1,40 @@
 import { NextResponse } from "next/server";
 import { MercadoPagoConfig, Preference } from "mercadopago";
-import { createServerSupabaseClient } from "../../../lib/supabase-server";
-import { getCurrentUser } from "../../../lib/supabase-auth";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { getCurrentUser } from "@/lib/supabase-auth";
 import {
+  BASE_PRICE,
+  FLOOR_FACTOR,
   MAX_OFFER,
-  isValidPosition,
-  minimumOfferFor,
+  MAX_RANKING_POSITION,
   normalizeOffer,
-} from "../../../lib/prices";
-import { missingForPublish, type Business } from "../../../lib/business";
+} from "@/lib/prices";
+import { checkoutSchema } from "@/lib/schemas";
+import { parseInput, readJson } from "@/lib/validation";
+import { checkoutLimiter, tooManyRequests } from "@/lib/rate-limit";
+import { missingForPublish } from "@/lib/business";
 import {
   RESERVATION_MINUTES,
   allowCashPayments,
   mercadoPagoDate,
-} from "../../../lib/payments";
+} from "@/lib/payments";
+import { log } from "@/lib/log";
+import { TERMS_VERSION, withTax } from "@/lib/legal";
 
-type PositionState = {
-  holder_id: string | null;
-  current_price: number | string | null;
-  floor_price: number | string | null;
-  reserved_amount: number | string | null;
-  reserved_until: string | null;
-  next_free_position: number | null;
+type RankingState = {
+  lowest_price: number | string | null;
+  ranked_count: number | null;
+  own_price: number | string | null;
+  own_position: number | null;
 };
 
 /**
- * Inicia una oferta: valida al dueño y su perfil, calcula el mínimo contra
- * el estado real de la posición (máximo pagado hacia abajo y reservas
- * vigentes), acepta un monto libre por encima del mínimo, registra una
- * reserva de RESERVATION_MINUTES y crea la preferencia de pago.
- *
- * Solo se vende el siguiente lugar libre o superar a un ocupado. Si el
- * ranking cambió desde que el cliente lo vio, responde 409 con el estado
- * nuevo (`price_changed` o `ranking_changed`) para que el modal lo muestre
- * antes de cobrar.
+ * Inicia una oferta (Método A): el usuario elige un MONTO y el ranking se
+ * ordena por lo pagado. El mínimo es BASE_PRICE, al menos FLOOR_FACTOR sobre
+ * el precio más bajo del ranking y —si el negocio ya está dentro— mayor que
+ * su propio precio. Registra la oferta con su posición proyectada
+ * (informativa), reserva RESERVATION_MINUTES y crea la preferencia de pago
+ * (el total cobrado en Mercado Pago es la oferta neta más IVA).
  */
 export async function POST(request: Request) {
   try {
@@ -42,18 +43,23 @@ export async function POST(request: Request) {
     if (!user) {
       return NextResponse.json(
         { error: "Inicia sesión para ofertar.", code: "auth" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
-    const body = await request.json().catch(() => ({}));
-    const position = Number(body.position);
-    const requestedAmount =
-      body.amount === undefined || body.amount === null ? null : body.amount;
+    const limit = await checkoutLimiter().limit(user.id);
 
-    if (!isValidPosition(position)) {
-      return NextResponse.json({ error: "Posición inválida." }, { status: 400 });
+    if (!limit.ok) {
+      return tooManyRequests(limit.retryAfter);
     }
+
+    const parsed = parseInput(checkoutSchema, await readJson(request));
+
+    if (!parsed.ok) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
+    }
+
+    const requestedAmount = parsed.data.amount;
 
     const supabase = createServerSupabaseClient();
     const { data: businessRow, error: businessError } = await supabase
@@ -63,22 +69,28 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     if (businessError) {
-      return NextResponse.json({ error: "No se pudo consultar tu negocio." }, { status: 500 });
+      return NextResponse.json(
+        { error: "No se pudo consultar tu negocio." },
+        { status: 500 },
+      );
     }
 
     if (!businessRow) {
       return NextResponse.json(
-        { error: "No encontramos un negocio ligado a tu cuenta.", code: "no_business" },
-        { status: 400 }
+        {
+          error: "No encontramos un negocio ligado a tu cuenta.",
+          code: "no_business",
+        },
+        { status: 400 },
       );
     }
 
-    const business = businessRow as Business;
+    const business = businessRow;
 
     if (!business.active) {
       return NextResponse.json(
         { error: "Tu negocio está desactivado. Escríbenos para reactivarlo." },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -91,90 +103,88 @@ export async function POST(request: Request) {
           code: "profile_incomplete",
           missing,
         },
-        { status: 400 }
-      );
-    }
-
-    if (business.position !== null && position > business.position) {
-      return NextResponse.json(
-        { error: `Ya ocupas la posición #${business.position}, que es mejor que la #${position}.` },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     await supabase.rpc("expire_bids");
 
-    const { data: stateRows, error: stateError } = await supabase.rpc("position_state", {
-      p_position: position,
-      p_business_id: business.id,
-    });
+    const { data: stateRows, error: stateError } = await supabase.rpc(
+      "ranking_state",
+      { p_business_id: business.id },
+    );
 
     if (stateError) {
-      return NextResponse.json({ error: "No se pudo consultar la posición." }, { status: 500 });
-    }
-
-    const state = ((stateRows ?? [])[0] ?? {}) as Partial<PositionState>;
-    const holderId = state.holder_id ?? null;
-    const nextFree = state.next_free_position ?? null;
-
-    // Lugar libre: solo se vende el siguiente al último ocupado.
-    if (holderId === null && position !== nextFree) {
       return NextResponse.json(
-        {
-          error:
-            nextFree === null
-              ? "El ranking está lleno: solo puedes entrar superando a un negocio."
-              : `Alguien acaba de entrar al ranking. El siguiente lugar libre ahora es el #${nextFree}.`,
-          code: "ranking_changed",
-          nextFree,
-        },
-        { status: 409 }
+        { error: "No se pudo consultar el ranking." },
+        { status: 500 },
       );
     }
 
-    const floorPrice = state.floor_price != null ? Number(state.floor_price) : null;
-    const reservedAmount = state.reserved_amount != null ? Number(state.reserved_amount) : null;
-    const floor =
-      floorPrice === null && reservedAmount === null
-        ? null
-        : Math.max(floorPrice ?? 0, reservedAmount ?? 0);
-    const minimum = minimumOfferFor(position, floor);
+    const state = ((stateRows ?? [])[0] ?? {}) as Partial<RankingState>;
+    const lowest = state.lowest_price != null ? Number(state.lowest_price) : null;
+    const ownPrice = state.own_price != null ? Number(state.own_price) : null;
+    const ownPosition = state.own_position ?? null;
 
-    let amount = minimum;
-
-    if (requestedAmount !== null) {
-      const normalized = normalizeOffer(requestedAmount, minimum);
-
-      if (normalized === null) {
-        return NextResponse.json({ error: "Escribe un monto válido en pesos." }, { status: 400 });
-      }
-
-      if (normalized < Number(requestedAmount) - 0.5) {
-        return NextResponse.json(
-          { error: `El monto máximo por oferta es $${MAX_OFFER.toLocaleString("es-MX")} MXN.` },
-          { status: 400 }
-        );
-      }
-
-      if (Number(requestedAmount) < minimum) {
-        return NextResponse.json(
-          {
-            error: `El precio de la posición #${position} cambió: ahora la oferta mínima es $${minimum} MXN.`,
-            code: "price_changed",
-            amount: minimum,
-            reservedUntil: state.reserved_until ?? null,
-          },
-          { status: 409 }
-        );
-      }
-
-      amount = normalized;
+    let minimum = BASE_PRICE;
+    if (lowest !== null) {
+      minimum = Math.max(
+        minimum,
+        Math.ceil(Math.round(lowest * FLOOR_FACTOR * 100) / 100),
+      );
     }
+    if (ownPosition !== null && ownPrice !== null) {
+      minimum = Math.max(minimum, Math.floor(ownPrice) + 1);
+    }
+
+    const amount = normalizeOffer(requestedAmount);
+
+    if (amount === null) {
+      return NextResponse.json(
+        { error: "Escribe un monto válido en pesos." },
+        { status: 400 },
+      );
+    }
+
+    if (Number(requestedAmount) > MAX_OFFER) {
+      return NextResponse.json(
+        {
+          error: `El monto máximo por oferta es $${MAX_OFFER.toLocaleString("es-MX")} MXN.`,
+        },
+        { status: 400 },
+      );
+    }
+
+    if (amount < minimum) {
+      return NextResponse.json(
+        {
+          error: `La oferta mínima ahora mismo es $${minimum} MXN.`,
+          code: "below_minimum",
+          minimum,
+        },
+        { status: 400 },
+      );
+    }
+
+    // Posición proyectada (informativa): cuántos pagan igual o más que esto.
+    const { count: aboveCount } = await supabase
+      .from("businesses")
+      .select("id", { count: "exact", head: true })
+      .eq("active", true)
+      .eq("status", "published")
+      .not("position", "is", null)
+      .neq("id", business.id)
+      .gte("current_price", amount);
+
+    const projected = Math.min((aboveCount ?? 0) + 1, MAX_RANKING_POSITION);
 
     const accessToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
 
     if (!accessToken) {
-      return NextResponse.json({ error: "Falta MERCADOPAGO_ACCESS_TOKEN." }, { status: 500 });
+      return NextResponse.json(
+        { error: "Falta MERCADOPAGO_ACCESS_TOKEN." },
+        { status: 500 },
+      );
     }
 
     // Una sola reserva viva por negocio.
@@ -191,17 +201,20 @@ export async function POST(request: Request) {
         business_id: business.id,
         business_name: business.name,
         category: business.category ?? "General",
-        position,
+        position: projected,
         amount,
+        terms_version: TERMS_VERSION,
         status: "pending",
-        entry: holderId === null,
         expires_at: expiresAt.toISOString(),
       })
       .select("id")
       .single();
 
     if (bidError || !bid) {
-      return NextResponse.json({ error: "No se pudo registrar la oferta." }, { status: 500 });
+      return NextResponse.json(
+        { error: "No se pudo registrar la oferta." },
+        { status: 500 },
+      );
     }
 
     const appUrl = process.env.NEXT_PUBLIC_APP_URL;
@@ -214,17 +227,19 @@ export async function POST(request: Request) {
         body: {
           items: [
             {
-              id: `eln1-position-${position}`,
-              title: `EL N1 - Posición #${position}`,
-              description: `Posición #${position} - ${business.name}`,
+              id: `eln1-offer-${bid.id}`,
+              title: `EL N1 - Oferta de $${amount} MXN (IVA incluido)`,
+              description: `${business.name} - posición estimada #${projected}`,
               quantity: 1,
               currency_id: "MXN",
-              unit_price: amount,
+              unit_price: withTax(amount),
             },
           ],
           external_reference: String(bid.id),
-          metadata: { bid_id: bid.id, business_id: business.id, position },
-          notification_url: appUrl ? `${appUrl}/api/webhooks/mercadopago` : undefined,
+          metadata: { bid_id: bid.id, business_id: business.id, projected },
+          notification_url: appUrl
+            ? `${appUrl}/api/webhooks/mercadopago`
+            : undefined,
           back_urls: appUrl
             ? {
                 success: `${appUrl}/?payment=success`,
@@ -241,7 +256,11 @@ export async function POST(request: Request) {
         },
       });
     } catch (error) {
-      console.error("ERROR MERCADO PAGO (preferencia):", error);
+      log.error(
+        "checkout.preference_failed",
+        { bidId: bid.id, amount },
+        error,
+      );
       await supabase
         .from("bids")
         .update({ status: "expired", failure_reason: "preferencia_fallida" })
@@ -249,7 +268,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json(
         { error: "Mercado Pago rechazó la solicitud. Inténtalo de nuevo." },
-        { status: 502 }
+        { status: 502 },
       );
     }
 
@@ -262,15 +281,16 @@ export async function POST(request: Request) {
       success: true,
       bidId: bid.id,
       amount,
+      projected,
       expiresAt: expiresAt.toISOString(),
       init_point: result.init_point,
     });
   } catch (error) {
-    console.error("ERROR CHECKOUT:", error);
+    log.error("checkout.failed", {}, error);
 
     return NextResponse.json(
       { error: "No se pudo iniciar el pago." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

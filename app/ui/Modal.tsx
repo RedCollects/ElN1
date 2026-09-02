@@ -1,17 +1,33 @@
 "use client";
 
 import { useEffect, useId, type ReactNode } from "react";
+import { cn } from "./cn";
+import { Icon } from "./Icon";
 import { Eyebrow } from "./Typography";
 
 type ModalProps = {
   onClose: () => void;
   eyebrow?: ReactNode;
   title: ReactNode;
+  /**
+   * Pie de acciones: el primer botón ocupa el ancho (`flex-1`) y los demás van
+   * separados por una regla vertical de 2px. Pasar `Button`s.
+   */
+  actions?: ReactNode;
   children: ReactNode;
 };
 
-/** Diálogo centrado sobre un fondo oscuro. Se cierra con ×, Escape o clic fuera. */
-export function Modal({ onClose, eyebrow, title, children }: ModalProps) {
+/**
+ * Diálogo: máximo 420px, borde de 2px, única sombra de la marca. Se cierra con
+ * el icono, Escape o clic fuera.
+ */
+export function Modal({
+  onClose,
+  eyebrow,
+  title,
+  actions,
+  children,
+}: ModalProps) {
   const titleId = useId();
 
   useEffect(() => {
@@ -24,7 +40,7 @@ export function Modal({ onClose, eyebrow, title, children }: ModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/50 px-6"
+      className="bg-ink/55 fixed inset-0 z-50 grid place-items-center p-6 sm:p-11"
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -33,12 +49,18 @@ export function Modal({ onClose, eyebrow, title, children }: ModalProps) {
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl bg-white p-7 shadow-2xl"
+        className="border-rule bg-bg shadow-modal flex max-h-[90vh] w-full max-w-[420px] flex-col border-2"
       >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            {eyebrow && <Eyebrow className="tracking-widest">{eyebrow}</Eyebrow>}
-            <h2 id={titleId} className="mt-2 text-3xl font-black text-neutral-950">
+        <div className="border-rule flex items-start justify-between gap-4 border-b-2 px-5 py-4">
+          <div className="min-w-0">
+            {eyebrow && <Eyebrow>{eyebrow}</Eyebrow>}
+            <h2
+              id={titleId}
+              className={cn(
+                "text-ink text-[26px] leading-[1.1] font-extrabold tracking-[-0.02em]",
+                Boolean(eyebrow) && "mt-1",
+              )}
+            >
               {title}
             </h2>
           </div>
@@ -47,13 +69,19 @@ export function Modal({ onClose, eyebrow, title, children }: ModalProps) {
             type="button"
             onClick={onClose}
             aria-label="Cerrar"
-            className="text-2xl leading-none text-neutral-400 hover:text-neutral-900"
+            className="text-muted hover:text-ink shrink-0"
           >
-            ×
+            <Icon name="x" size={18} />
           </button>
         </div>
 
-        {children}
+        <div className="overflow-y-auto px-5 py-6">{children}</div>
+
+        {actions && (
+          <div className="border-rule [&>*+*]:border-rule flex border-t-2 [&>*+*]:border-l-2 [&>*:first-child]:flex-1">
+            {actions}
+          </div>
+        )}
       </div>
     </div>
   );

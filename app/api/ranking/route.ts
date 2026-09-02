@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { createServerSupabaseClient } from "../../../lib/supabase-server";
-import { isValidPosition } from "../../../lib/prices";
-import type { Business } from "../../../lib/business";
-import type { Reservation } from "../../../lib/payments";
+import { createServerSupabaseClient } from "@/lib/supabase-server";
+import { isValidPosition } from "@/lib/prices";
+import type { Business } from "@/lib/business";
+import type { Reservation } from "@/lib/payments";
 
 /**
  * Estado en vivo del ranking (negocios con posición + reservas vigentes).

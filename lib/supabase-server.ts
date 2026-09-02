@@ -1,4 +1,7 @@
+import "server-only";
+
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "./database.types";
 
 export function createServerSupabaseClient() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -8,5 +11,5 @@ export function createServerSupabaseClient() {
     throw new Error("Faltan las variables de Supabase del servidor.");
   }
 
-  return createClient(url, key);
+  return createClient<Database>(url, key);
 }

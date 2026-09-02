@@ -14,5 +14,11 @@ export function SmartImage(props: ImageProps) {
   const src = typeof props.src === "string" ? props.src : "";
   const optimizable = src.includes(STORAGE_PATH);
 
-  return <Image {...props} alt={props.alt} unoptimized={!optimizable || props.unoptimized} />;
+  return (
+    <Image
+      {...props}
+      alt={props.alt}
+      unoptimized={!optimizable || props.unoptimized}
+    />
+  );
 }

@@ -4,29 +4,30 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import {
-  BASE_PRICE,
   MAX_OFFER,
   isValidPosition,
-  minimumOfferFor,
-  nextFreePosition,
+  minimumOffer,
   normalizeOffer,
-  priceFloor,
-} from "../lib/prices";
-import type { Business } from "../lib/business";
-import { RESERVATION_MINUTES, type Reservation } from "../lib/payments";
-import { formatPrice } from "../lib/format";
-import { RankingCard } from "./components/RankingCard";
+  projectedPosition,
+} from "@/lib/prices";
+import type { Business } from "@/lib/business";
+import { RESERVATION_MINUTES, type Reservation } from "@/lib/payments";
+import { formatPrice } from "@/lib/format";
+import { taxBreakdown } from "@/lib/legal";
+import { SlotCard } from "./components/SlotCard";
 import {
   Alert,
   Button,
   Container,
   Eyebrow,
   Field,
+  Figure,
   Heading,
+  LiveDot,
   Modal,
+  MoneyInput,
   Muted,
-  PrefixedInput,
-  Price,
+  cn,
 } from "@/app/ui";
 
 /** Lo que la portada sabe del visitante para decidir qué mostrar en el modal. */
@@ -49,71 +50,40 @@ type Props = {
 
 type LiveState = { businesses: Business[]; reservations: Reservation[] };
 
-/** Foto de la posición elegida al abrir el modal, para detectar cambios. */
-type Snapshot = { holderId: string | null; holderName: string | null; minimum: number };
-
 const POLL_INTERVAL_MS = 5000;
+
+function reservationAtIn(
+  reservations: Reservation[],
+  position: number,
+): Reservation | null {
+  const now = Date.now();
+  return (
+    reservations.find(
+      (reservation) =>
+        reservation.position === position &&
+        new Date(reservation.expiresAt).getTime() > now,
+    ) ?? null
+  );
+}
+
+function competingIn(
+  reservations: Reservation[],
+  amount: number,
+): Reservation | null {
+  const now = Date.now();
+  return (
+    reservations.find(
+      (reservation) =>
+        reservation.amount >= amount &&
+        new Date(reservation.expiresAt).getTime() > now,
+    ) ?? null
+  );
+}
 
 function rankedOf(businesses: Business[]): Business[] {
   return businesses
     .filter((business) => isValidPosition(business.position))
     .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
-}
-
-function reservationAtIn(reservations: Reservation[], position: number): Reservation | null {
-  return (
-    reservations.find(
-      (reservation) =>
-        reservation.position === position && new Date(reservation.expiresAt).getTime() > Date.now()
-    ) ?? null
-  );
-}
-
-function minimumAt(
-  position: number,
-  ranked: Business[],
-  reservations: Reservation[],
-  viewerId: string | null
-): number {
-  const floor = priceFloor(
-    position,
-    ranked,
-    reservationAtIn(reservations, position)?.amount ?? null,
-    viewerId
-  );
-  return minimumOfferFor(position, floor);
-}
-
-function snapshotAt(
-  position: number,
-  ranked: Business[],
-  reservations: Reservation[],
-  viewerId: string | null
-): Snapshot {
-  const holder = ranked.find((business) => business.position === position) ?? null;
-  return {
-    holderId: holder?.id ?? null,
-    holderName: holder?.name ?? null,
-    minimum: minimumAt(position, ranked, reservations, viewerId),
-  };
-}
-
-function describeChange(before: Snapshot, after: Snapshot, position: number): string | null {
-  if (before.holderId !== after.holderId) {
-    if (after.holderId === null) {
-      return `El ranking cambió: la posición #${position} ahora está libre.`;
-    }
-    if (before.holderId === null) {
-      return `Alguien acaba de entrar al ranking: la posición #${position} ahora es de ${after.holderName}.`;
-    }
-    return `El ranking cambió: la posición #${position} ahora es de ${after.holderName} y superarla cuesta ${formatPrice(after.minimum)}.`;
-  }
-
-  if (before.minimum !== after.minimum) {
-    return `El precio cambió: superar la posición #${position} ahora cuesta ${formatPrice(after.minimum)}.`;
-  }
-
-  return null;
 }
 
 export default function Ranking({
@@ -122,35 +92,17 @@ export default function Ranking({
   viewer,
   initialPosition = null,
 }: Props) {
+  const viewerId = viewer.business?.id ?? null;
+
   const [live, setLive] = useState<LiveState>({
     businesses: initialBusinesses,
     reservations: initialReservations,
   });
-  const startPosition =
-    initialPosition && isValidPosition(initialPosition) ? initialPosition : null;
-  const [selectedPosition, setSelectedPosition] = useState<number | null>(startPosition);
-  const [snapshot, setSnapshot] = useState<Snapshot | null>(() =>
-    startPosition === null
-      ? null
-      : snapshotAt(
-          startPosition,
-          rankedOf(initialBusinesses),
-          initialReservations,
-          viewer.business?.id ?? null
-        )
+  const [open, setOpen] = useState(
+    Boolean(initialPosition && isValidPosition(initialPosition)),
   );
-  const [offer, setOffer] = useState(() =>
-    startPosition === null
-      ? ""
-      : String(
-          minimumAt(
-            startPosition,
-            rankedOf(initialBusinesses),
-            initialReservations,
-            viewer.business?.id ?? null
-          )
-        )
-  );
+  const [targetName, setTargetName] = useState<string | null>(null);
+  const [offer, setOffer] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -178,9 +130,13 @@ export default function Ranking({
       const client = createClient(url, key, { auth: { persistSession: false } });
       const channel = client
         .channel("ranking-live")
-        .on("postgres_changes", { event: "*", schema: "public", table: "businesses" }, () => {
-          void refresh();
-        })
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "businesses" },
+          () => {
+            void refresh();
+          },
+        )
         .subscribe();
 
       cleanup = () => {
@@ -197,68 +153,47 @@ export default function Ranking({
   const { businesses, reservations } = live;
 
   const ranked = useMemo(() => rankedOf(businesses), [businesses]);
-  const viewerId = viewer.business?.id ?? null;
-  const nextFree = nextFreePosition(ranked);
-  const viewerBusiness = viewer.business
-    ? (ranked.find((business) => business.id === viewer.business?.id) ?? null)
-    : null;
-  const viewerPosition = viewerBusiness?.position ?? null;
+  const viewerRanked =
+    (viewerId && ranked.find((business) => business.id === viewerId)) || null;
+
+  const liveMinimum = minimumOffer(ranked, viewerRanked);
+  const offerAmount = normalizeOffer(offer) ?? liveMinimum;
+  const projected = projectedPosition(offerAmount, ranked, viewerId);
+  const tax = taxBreakdown(offerAmount);
+
+  const competingReservation = competingIn(reservations, offerAmount);
+  const reservationAt = (position: number) => reservationAtIn(reservations, position);
 
   const categoryOptions = Array.from(
-    new Set(ranked.flatMap((business) => (business.category ? [business.category] : [])))
+    new Set(
+      ranked.flatMap((business) =>
+        business.category ? [business.category] : [],
+      ),
+    ),
   );
-  const businessAt = (position: number) =>
-    ranked.find((business) => business.position === position) ?? null;
-  const reservationAt = (position: number) => reservationAtIn(reservations, position);
-  const minimumOfferAt = (position: number) => minimumAt(position, ranked, reservations, viewerId);
-  const snapshotOf = (position: number) => snapshotAt(position, ranked, reservations, viewerId);
 
-  const selectedBusiness = selectedPosition ? businessAt(selectedPosition) : null;
-  const ownsSelected = Boolean(
-    selectedBusiness && viewer.business && selectedBusiness.id === viewer.business.id
-  );
-  const liveMinimum = selectedPosition ? minimumOfferAt(selectedPosition) : BASE_PRICE;
-  const offerAmount = normalizeOffer(offer, liveMinimum) ?? liveMinimum;
-  const selectedIsFree = selectedPosition !== null && selectedBusiness === null;
-  const freeMoved = selectedIsFree && selectedPosition !== nextFree;
+  /** Abre el modal con el monto prellenado para superar a `business` (o entrar). */
+  function openOffer(business: Business | null) {
+    const beatPrice =
+      business && business.id !== viewerId
+        ? Math.floor(Number(business.current_price)) + 1
+        : null;
 
-  function openPosition(position: number) {
-    setSelectedPosition(position);
-    setSnapshot(snapshotOf(position));
-    setOffer(String(minimumOfferAt(position)));
+    setTargetName(business && business.id !== viewerId ? business.name : null);
+    setOffer(String(Math.max(liveMinimum, beatPrice ?? 0)));
     setNotice(null);
     setError(null);
     setLoading(false);
+    setOpen(true);
   }
 
-  // Con el modal abierto, avisar si la posición elegida cambió por debajo
-  // (se compara la foto tomada al abrir con el estado en vivo).
-  const changeNotice =
-    selectedPosition === null || snapshot === null
-      ? null
-      : freeMoved
-        ? nextFree === null
-          ? "Alguien acaba de entrar y el ranking está lleno. Ahora solo puedes entrar superando a un negocio."
-          : `Alguien acaba de entrar al ranking. El siguiente lugar libre ahora es el #${nextFree}.`
-        : describeChange(snapshot, snapshotOf(selectedPosition), selectedPosition);
-
-  function acceptChange() {
-    if (selectedPosition === null) return;
-    if (freeMoved) {
-      if (nextFree === null) {
-        closeModal();
-        return;
-      }
-      openPosition(nextFree);
-      return;
-    }
-    setSnapshot(snapshotOf(selectedPosition));
-    if (offerAmount < liveMinimum) setOffer(String(liveMinimum));
+  function openPosition(position: number) {
+    openOffer(ranked.find((business) => business.position === position) ?? null);
   }
 
   function closeModal() {
-    setSelectedPosition(null);
-    setSnapshot(null);
+    setOpen(false);
+    setTargetName(null);
     setOffer("");
     setNotice(null);
     setError(null);
@@ -266,18 +201,16 @@ export default function Ranking({
   }
 
   async function reserveAndPay() {
-    if (!selectedPosition) return;
-
-    const amount = normalizeOffer(offer, liveMinimum);
+    const amount = normalizeOffer(offer);
 
     if (amount === null) {
       setError("Escribe un monto válido en pesos.");
       return;
     }
 
-    if (Number(offer) < liveMinimum) {
+    if (amount < liveMinimum) {
       setOffer(String(liveMinimum));
-      setNotice(`La oferta mínima para esta posición es ${formatPrice(liveMinimum)}.`);
+      setNotice(`La oferta mínima ahora mismo es ${formatPrice(liveMinimum)}.`);
       return;
     }
 
@@ -289,23 +222,20 @@ export default function Ranking({
       const response = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ position: selectedPosition, amount }),
+        body: JSON.stringify({ amount }),
       });
 
       const data = (await response.json().catch(() => ({}))) as {
         error?: string;
         code?: string;
-        amount?: number;
-        nextFree?: number | null;
+        minimum?: number;
         init_point?: string;
       };
 
-      if (response.status === 409) {
+      if (data.code === "below_minimum" && typeof data.minimum === "number") {
         await refresh();
-        if (data.code === "price_changed" && typeof data.amount === "number") {
-          setOffer(String(data.amount));
-        }
-        setNotice(data.error ?? "El ranking cambió. Revisa el precio antes de continuar.");
+        setOffer(String(data.minimum));
+        setNotice(data.error ?? "El mínimo cambió. Revisa tu oferta.");
         setLoading(false);
         return;
       }
@@ -329,218 +259,257 @@ export default function Ranking({
     }
   }
 
-  const nextParam = selectedPosition
-    ? `?next=${encodeURIComponent(`/?position=${selectedPosition}`)}`
-    : "";
+  const nextParam = `?next=${encodeURIComponent("/?position=1")}`;
+
+  const canBid =
+    viewer.loggedIn &&
+    viewer.business !== null &&
+    viewer.business.missing.length === 0;
 
   const visibleRanked =
     activeCategory === "Todas"
       ? ranked
       : ranked.filter((business) => business.category === activeCategory);
 
+  const nextFree =
+    ranked.length < 50 ? (ranked[ranked.length - 1]?.position ?? 0) + 1 : null;
+
   return (
     <>
-      <Container width="content" className="pb-20">
-        <div className="mb-6">
-          <Eyebrow>Ranking actual</Eyebrow>
-          <Heading as="h2" className="mt-1">
-            Los que están arriba
+      <Container className="pb-20">
+        <div className="border-rule border-t-2 pt-8">
+          <LiveDot>Ranking en vivo</LiveDot>
+          <Heading as="h2" size="title" className="mt-3">
+            Las posiciones
           </Heading>
-          <Muted className="mt-2">
-            Supera a quien quieras o entra al siguiente lugar libre. Pasa el cursor o toca un
-            negocio para ver su anuncio.
+          <Muted className="mt-2 max-w-[640px]">
+            El ranking se ordena por lo que cada negocio ofrece: el que más
+            paga está arriba, siempre. Elige tu monto y el sitio te dice dónde
+            quedarías. Pasa el cursor o toca un negocio para ver su anuncio.
           </Muted>
         </div>
 
-        <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
-          {["Todas", ...categoryOptions].map((category) => (
-            <button
-              key={category}
-              type="button"
-              onClick={() => setActiveCategory(category)}
-              className={
-                activeCategory === category
-                  ? "shrink-0 rounded-full bg-neutral-950 px-4 py-2 text-sm font-bold text-white"
-                  : "shrink-0 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-bold text-neutral-600 transition hover:border-brand-300"
-              }
-            >
-              {category}
-            </button>
-          ))}
+        <div
+          role="group"
+          aria-label="Filtrar por categoría"
+          className="mt-6 flex gap-2 overflow-x-auto pb-2"
+        >
+          {["Todas", ...categoryOptions].map((category) => {
+            const active = activeCategory === category;
+            return (
+              <button
+                key={category}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setActiveCategory(category)}
+                className={cn(
+                  "border-rule shrink-0 border-2 px-4 py-2 text-[12px] font-bold tracking-[0.08em] uppercase transition-colors duration-[120ms]",
+                  active
+                    ? "bg-ink text-bg"
+                    : "text-ink hover:bg-surface bg-transparent",
+                )}
+              >
+                {category}
+              </button>
+            );
+          })}
         </div>
 
-        <div className="space-y-4">
+        <div className="mt-6 space-y-3">
           {visibleRanked.map((business) => {
             const position = business.position as number;
 
             return (
-              <RankingCard
+              <SlotCard
                 key={business.id}
                 position={position}
                 business={business}
                 onBid={openPosition}
                 reservation={reservationAt(position)}
-                minimumOffer={minimumOfferAt(position)}
-                isOwn={Boolean(viewer.business && business.id === viewer.business.id)}
+                minimumOffer={Math.max(
+                  liveMinimum,
+                  business.id === viewerId
+                    ? liveMinimum
+                    : Math.floor(Number(business.current_price)) + 1,
+                )}
+                isOwn={Boolean(viewerId && business.id === viewerId)}
               />
             );
           })}
 
           {activeCategory === "Todas" && nextFree !== null && (
-            <RankingCard
+            <SlotCard
               key={`free-${nextFree}`}
               position={nextFree}
               business={null}
-              onBid={openPosition}
+              onBid={() => openOffer(null)}
               reservation={reservationAt(nextFree)}
-              minimumOffer={minimumOfferAt(nextFree)}
+              minimumOffer={liveMinimum}
             />
           )}
         </div>
       </Container>
 
-      {selectedPosition !== null && (
+      {open && (
         <Modal
           onClose={closeModal}
-          eyebrow={`Posición #${selectedPosition}`}
+          eyebrow="Tu oferta"
           title={
-            ownsSelected
-              ? "Blinda tu posición"
-              : selectedBusiness
-                ? "Superar posición"
+            targetName
+              ? `Supera a ${targetName}`
+              : viewerRanked
+                ? "Sube tu oferta"
                 : "Entra al ranking"
+          }
+          actions={
+            canBid ? (
+              <>
+                <Button size="lg" onClick={reserveAndPay} disabled={loading}>
+                  {loading
+                    ? "Reservando…"
+                    : `Ofertar y pagar ${formatPrice(tax.total)}`}
+                </Button>
+                <Button
+                  size="lg"
+                  variant="ghost"
+                  className="px-6"
+                  onClick={closeModal}
+                >
+                  Cancelar
+                </Button>
+              </>
+            ) : undefined
           }
         >
           {!viewer.loggedIn ? (
-            <div className="mt-6">
-              <p className="text-sm leading-6 text-neutral-600">
-                Para ofertar necesitas una cuenta de negocio. Es gratis: te registras,
-                completas tu perfil y pagas solo cuando quieras publicarte.
+            <div>
+              <p className="text-ink text-[15px] leading-relaxed">
+                Para ofertar necesitas una cuenta de negocio. Es gratis: te
+                registras, completas tu perfil y pagas solo cuando quieras
+                publicarte.
               </p>
-              <Button href={`/registro${nextParam}`} size="lg" block className="mt-5">
-                REGISTRA TU NEGOCIO
+              <Button
+                href={`/registro${nextParam}`}
+                size="lg"
+                block
+                className="mt-5"
+              >
+                Registra tu negocio
               </Button>
-              <Button href={`/ingresar${nextParam}`} variant="ghost" block className="mt-3 py-3">
+              <Button
+                href={`/ingresar${nextParam}`}
+                variant="link"
+                className="mt-4"
+              >
                 Ya tengo cuenta
               </Button>
             </div>
           ) : !viewer.business ? (
-            <p className="mt-6 text-sm text-neutral-600">
+            <p className="text-ink text-[15px] leading-relaxed">
               No encontramos un negocio ligado a tu cuenta.
             </p>
           ) : viewer.business.missing.length > 0 ? (
-            <div className="mt-6">
-              <p className="text-sm leading-6 text-neutral-600">
+            <div>
+              <p className="text-ink text-[15px] leading-relaxed">
                 Antes de publicar, completa tu perfil. Falta:
               </p>
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-neutral-600">
+              <ul className="text-ink mt-2 list-disc space-y-1 pl-5 text-[15px]">
                 {viewer.business.missing.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>
               <Button href="/mi-negocio" size="lg" block className="mt-5">
-                COMPLETAR MI PERFIL
+                Completar mi perfil
               </Button>
             </div>
-          ) : viewerPosition !== null && selectedPosition > viewerPosition ? (
-            <p className="mt-6 text-sm leading-6 text-neutral-600">
-              Ya ocupas la posición #{viewerPosition}, que es mejor que la #{selectedPosition}.
-              Elige una posición más alta.
-            </p>
           ) : (
             <>
-              {changeNotice && (
-                <Alert tone="warning" title="El ranking cambió" className="mt-6">
-                  <p>{changeNotice}</p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    <Button size="sm" onClick={acceptChange}>
-                      {freeMoved
-                        ? nextFree === null
-                          ? "ENTENDIDO"
-                          : `IR AL #${nextFree}`
-                        : offerAmount < liveMinimum
-                          ? `OFERTAR ${formatPrice(liveMinimum)}`
-                          : "CONTINUAR"}
-                    </Button>
-                    <Button size="sm" variant="ghost" onClick={closeModal}>
-                      Cancelar
-                    </Button>
-                  </div>
-                </Alert>
+              {viewerRanked && (
+                <div className="border-rule flex items-baseline justify-between gap-4 border-b-2 pb-4">
+                  <Eyebrow tone="muted">
+                    Tu oferta actual (#{viewerRanked.position})
+                  </Eyebrow>
+                  <Figure size={22}>
+                    {formatPrice(viewerRanked.current_price)}
+                  </Figure>
+                </div>
               )}
 
-              <div className="mt-6 rounded-2xl bg-brand-50 p-5">
-                {selectedBusiness && (
-                  <>
-                    <Muted>{ownsSelected ? "Tu oferta actual" : "Oferta actual"}</Muted>
-                    <p className="mt-1">
-                      <Price value={selectedBusiness.current_price} />
-                    </p>
-                    <div className="my-4 h-px bg-brand-100" />
-                  </>
-                )}
-
-                <Muted>
-                  {ownsSelected
-                    ? "Nueva oferta para blindarte"
-                    : selectedBusiness
-                      ? "Oferta mínima para superar"
-                      : "Precio de entrada"}
-                </Muted>
-                <p className="mt-1">
-                  <Price value={liveMinimum} size="lg" tone="ink" />
-                </p>
-
-                {reservationAt(selectedPosition) && (
-                  <p className="mt-2 text-xs text-amber-700">
-                    🔒 Hay una reserva activa sobre esta posición; el mínimo ya la supera.
-                  </p>
-                )}
-
+              <div className="py-4">
                 <Field
-                  label="Tu oferta (MXN)"
-                  hint={`Puedes ofrecer más que el mínimo para que sea más difícil superarte. Máximo ${formatPrice(MAX_OFFER)}.`}
-                  className="mt-4"
+                  label="Tu oferta (MXN, sin IVA)"
+                  hint={`Mínimo ${formatPrice(liveMinimum)} (al menos 10 % arriba del precio más bajo del ranking${viewerRanked ? " y mayor que tu oferta actual" : ""}). Máximo ${formatPrice(MAX_OFFER)}.`}
                 >
-                  <PrefixedInput
-                    prefix="$"
-                    type="number"
-                    inputMode="numeric"
+                  <MoneyInput
                     min={liveMinimum}
                     max={MAX_OFFER}
                     step={1}
                     value={offer}
                     onChange={(event) => setOffer(event.target.value)}
-                    disabled={loading || Boolean(changeNotice)}
+                    disabled={loading}
                   />
                 </Field>
               </div>
 
-              <div className="mt-5 space-y-2 text-sm text-neutral-500">
+              <div className="border-rule flex items-baseline justify-between gap-4 border-t-2 py-4">
+                <div>
+                  <Eyebrow>Quedarías en</Eyebrow>
+                  <p className="text-muted mt-1 text-[12px]">
+                    Estimado: la posición se asigna al confirmarse el pago.
+                  </p>
+                </div>
+                <Figure size={30} tone="accent">
+                  {projected === null ? "—" : `#${projected}`}
+                </Figure>
+              </div>
+
+              <dl className="border-rule-soft text-muted grid grid-cols-[minmax(0,1fr)_auto] gap-y-1 border-t py-3 text-[13px] tabular-nums">
+                <dt>Subtotal</dt>
+                <dd className="text-right">{formatPrice(tax.subtotal)}</dd>
+                <dt>IVA 16 %</dt>
+                <dd className="text-right">{formatPrice(tax.iva)}</dd>
+                <dt className="text-ink font-bold">Total a pagar</dt>
+                <dd className="text-ink text-right font-bold">
+                  {formatPrice(tax.total)}
+                </dd>
+              </dl>
+              <div className="border-rule border-b-2" />
+
+              {competingReservation && (
+                <p className="text-accent-press mt-4 flex items-center gap-2 text-[13px]">
+                  <LiveDot />
+                  Alguien está ofertando {formatPrice(competingReservation.amount)}{" "}
+                  ahora mismo; si confirma antes que tú, tu posición estimada
+                  puede bajar.
+                </p>
+              )}
+
+              <div className="text-muted mt-4 space-y-2 text-[13px] leading-relaxed">
                 <p>
                   Negocio:{" "}
-                  <span className="font-bold text-neutral-800">{viewer.business.name}</span>
+                  <strong className="text-ink">{viewer.business.name}</strong>
                 </p>
                 <p>
-                  Al continuar reservamos la posición a este precio durante {RESERVATION_MINUTES}{" "}
-                  minutos y te enviamos a Mercado Pago. La posición se asigna al confirmarse el
-                  pago.
+                  Tu oferta reemplaza a la anterior (no se acumulan). Tienes{" "}
+                  {RESERVATION_MINUTES} minutos para pagar en Mercado Pago; al
+                  confirmarse, el ranking se reordena y tu lugar es tuyo
+                  mientras nadie ofrezca más.
                 </p>
-                <p className="text-xs leading-5 text-neutral-400">
-                  Al continuar aceptas los{" "}
-                  <Link href="/terminos" className="underline">
+                <p>
+                  Al pagar aceptas los{" "}
+                  <Link
+                    href="/terminos"
+                    className="text-accent-press underline"
+                  >
                     términos y condiciones
-                  </Link>{" "}
-                  y la{" "}
-                  <Link href="/responsiva" className="underline">
-                    carta responsiva
                   </Link>
-                  .
+                  , incluidas las reglas del ranking y la política de
+                  reembolsos.
                 </p>
               </div>
 
               {notice && (
-                <Alert tone="warning" compact className="mt-4">
+                <Alert tone="accent" compact className="mt-4">
                   {notice}
                 </Alert>
               )}
@@ -550,17 +519,6 @@ export default function Ranking({
                   {error}
                 </Alert>
               )}
-
-              <Button
-                variant="accent"
-                size="lg"
-                block
-                onClick={reserveAndPay}
-                disabled={loading || Boolean(changeNotice)}
-                className="mt-5"
-              >
-                {loading ? "RESERVANDO..." : `RESERVAR Y PAGAR ${formatPrice(offerAmount)}`}
-              </Button>
             </>
           )}
         </Modal>

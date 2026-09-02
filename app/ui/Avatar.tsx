@@ -1,32 +1,49 @@
 import type { ReactNode } from "react";
-import { SmartImage } from "../components/SmartImage";
+import { SmartImage } from "@/app/components/SmartImage";
 import { cn } from "./cn";
 
-type AvatarSize = "sm" | "md" | "lg";
+type AvatarSize = "xs" | "sm" | "md" | "lg";
 
-const SIZES: Record<AvatarSize, { box: string; px: number; fallback: string }> = {
-  sm: { box: "h-14 w-14 rounded-xl", px: 56, fallback: "text-lg" },
-  md: { box: "h-20 w-20 rounded-2xl border-4 border-white shadow-md", px: 80, fallback: "text-3xl" },
-  lg: { box: "h-28 w-28 rounded-3xl border-4 border-white shadow-lg", px: 112, fallback: "text-5xl" },
+const SIZES: Record<AvatarSize, { box: string; px: number; text: string }> = {
+  xs: { box: "h-8 w-8", px: 32, text: "text-[12px]" },
+  sm: { box: "h-14 w-14", px: 56, text: "text-[16px]" },
+  md: { box: "h-20 w-20", px: 80, text: "text-[22px]" },
+  lg: { box: "h-[88px] w-[88px]", px: 88, text: "text-[26px]" },
 };
+
+/** "Tacos El Regio" → "TR". */
+export function initials(name: string): string {
+  const words = name
+    .split(/\s+/)
+    .filter((word) => word.length > 1 || /\d/.test(word));
+  const picked =
+    words.length > 1 ? [words[0], words[words.length - 1]] : words.slice(0, 1);
+  return picked
+    .map((word) => word[0]?.toUpperCase() ?? "")
+    .join("")
+    .slice(0, 2);
+}
 
 type AvatarProps = {
   src: string | null | undefined;
   alt: string;
   size?: AvatarSize;
-  /** Qué mostrar sin imagen (por defecto 🏪). */
+  /** Qué mostrar sin imagen. Por defecto, las iniciales de `alt`. */
   fallback?: ReactNode;
   priority?: boolean;
+  /** `paper` sobre el azul a sangre del líder. */
+  tone?: "surface" | "paper";
   className?: string;
 };
 
-/** Logo de un negocio con fallback. */
+/** Logo de un negocio: cuadrado, sin borde ni sombra; sin imagen, iniciales sobre `surface`. */
 export function Avatar({
   src,
   alt,
   size = "md",
-  fallback = "🏪",
+  fallback,
   priority,
+  tone = "surface",
   className,
 }: AvatarProps) {
   const spec = SIZES[size];
@@ -34,10 +51,11 @@ export function Avatar({
   return (
     <div
       className={cn(
-        "flex shrink-0 items-center justify-center overflow-hidden bg-neutral-100 font-black",
+        "flex shrink-0 items-center justify-center overflow-hidden font-extrabold",
+        tone === "paper" ? "bg-accent-fg text-accent" : "bg-surface text-ink",
         spec.box,
-        spec.fallback,
-        className
+        spec.text,
+        className,
       )}
     >
       {src ? (
@@ -50,7 +68,7 @@ export function Avatar({
           className="h-full w-full object-cover"
         />
       ) : (
-        fallback
+        (fallback ?? initials(alt))
       )}
     </div>
   );

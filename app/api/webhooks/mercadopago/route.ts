@@ -1,47 +1,16 @@
 import { NextResponse } from "next/server";
-import { createHmac, timingSafeEqual } from "node:crypto";
-import { verifyAndSettlePayment } from "../../../../lib/settle-bid";
+import { verifyAndSettlePayment } from "@/lib/settle-bid";
+import { isMercadoPagoWebhookAuthorized } from "@/lib/mercadopago-signature";
+import { log } from "@/lib/log";
 
 function hasValidSignature(request: Request, paymentId: string) {
-  const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
-
-  if (!secret) {
-    return process.env.NODE_ENV !== "production";
-  }
-
-  const signature = request.headers.get("x-signature") ?? "";
-  const requestId = request.headers.get("x-request-id") ?? "";
-  const timestamp = signature
-    .split(",")
-    .map((part) => part.trim().split("="))
-    .find(([key]) => key === "ts")?.[1];
-  const receivedHash = signature
-    .split(",")
-    .map((part) => part.trim().split("="))
-    .find(([key]) => key === "v1")?.[1];
-
-  if (!timestamp || !receivedHash || !requestId) {
-    return false;
-  }
-
-  if (
-    !/^\d+$/.test(timestamp) ||
-    Math.abs(Date.now() - Number(timestamp) * 1000) > 5 * 60 * 1000
-  ) {
-    return false;
-  }
-
-  const manifest = `id:${paymentId};request-id:${requestId};ts:${timestamp};`;
-  const expectedHash = createHmac("sha256", secret)
-    .update(manifest)
-    .digest("hex");
-  const expected = Buffer.from(expectedHash);
-  const received = Buffer.from(receivedHash);
-
-  return (
-    expected.length === received.length &&
-    timingSafeEqual(expected, received)
-  );
+  return isMercadoPagoWebhookAuthorized({
+    signatureHeader: request.headers.get("x-signature"),
+    requestId: request.headers.get("x-request-id"),
+    paymentId,
+    secret: process.env.MERCADOPAGO_WEBHOOK_SECRET,
+    production: process.env.NODE_ENV === "production",
+  });
 }
 
 export async function POST(request: Request) {
@@ -53,11 +22,11 @@ export async function POST(request: Request) {
         url.searchParams.get("id") ??
         body?.data?.id ??
         body?.id ??
-        ""
+        "",
     ).trim();
 
     const eventType = String(
-      url.searchParams.get("type") ?? body?.type ?? body?.topic ?? ""
+      url.searchParams.get("type") ?? body?.type ?? body?.topic ?? "",
     );
 
     if (!paymentId) {
@@ -75,10 +44,10 @@ export async function POST(request: Request) {
     const result = await verifyAndSettlePayment(paymentId);
     return NextResponse.json({ received: true, ...result });
   } catch (error) {
-    console.error("MERCADO PAGO WEBHOOK ERROR:", error);
+    log.error("webhook.failed", {}, error);
     return NextResponse.json(
       { error: "No se pudo procesar la notificación." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
